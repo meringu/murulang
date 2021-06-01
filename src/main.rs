@@ -26,6 +26,19 @@ mod err {
     impl<'a> std::error::Error for FunctionNotFoundError<'a> {}
 
     #[derive(Debug, Clone)]
+    pub struct NoFunctionMatchesError<'a> {
+        pub name: &'a str,
+    }
+
+    impl<'a> std::fmt::Display for NoFunctionMatchesError<'a> {
+        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            write!(f, "no match for function error: {}", self.name)
+        }
+    }
+
+    impl<'a> std::error::Error for NoFunctionMatchesError<'a> {}
+
+    #[derive(Debug, Clone)]
     pub struct NotImplementedError<'a> {
         pub sub: &'a str,
     }
@@ -263,7 +276,7 @@ mod ast {
     impl<'a> Argument<'a> {
         pub fn eval(
             &self,
-            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
+            globals: &std::collections::HashMap::<&str, Vec<crate::ast::Function>>,
             locals: &std::collections::HashMap::<&str, crate::ast::Function>,
         ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
             match self {
@@ -287,23 +300,27 @@ mod ast {
     impl<'a> Call<'a> {
         pub fn eval(
             &self,
-            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
+            globals: &std::collections::HashMap::<&str, Vec<crate::ast::Function>>,
             locals: &std::collections::HashMap::<&str, crate::ast::Function>,
         ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
-            let f = match locals.get(self.variable.name) {
-                Some(f) => f,
-                None => match globals.get(self.variable.name) {
-                    Some(f) => f,
-                    None => return Err(Box::new(crate::err::FunctionNotFoundError{name: "TODO"})),
-                }
-            };
-
             let mut args = vec!();
             for arg in &self.args {
                 args.push(arg.eval(globals, locals)?);
             }
 
-            f.call(globals, args)
+            match locals.get(self.variable.name) {
+                Some(f) => return f.call(globals, args),
+                None => match globals.get(self.variable.name) {
+                    Some(fns) => for f in fns.into_iter() {
+                        if f.matches(&args)? {
+                            return f.call(globals, args);
+                        }
+                    },
+                    None => return Err(Box::new(crate::err::FunctionNotFoundError{name: "TODO"})),
+                }
+            };
+
+            Err(Box::new(crate::err::NoFunctionMatchesError{name: "TODO"}))
         }
     }
 
@@ -318,7 +335,7 @@ mod ast {
     impl<'a> Unary<'a> {
         pub fn eval(
             &self,
-            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
+            globals: &std::collections::HashMap::<&str, Vec<crate::ast::Function>>,
             locals: &std::collections::HashMap::<&str, crate::ast::Function>,
         ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
             match self {
@@ -340,7 +357,7 @@ mod ast {
     impl<'a> Binary<'a> {
         pub fn eval(
             &self,
-            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
+            globals: &std::collections::HashMap::<&str, Vec<crate::ast::Function>>,
             locals: &std::collections::HashMap::<&str, crate::ast::Function>,
         ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
             let left = self.left.eval(globals, locals)?;
@@ -360,7 +377,7 @@ mod ast {
     impl<'a> Ternary<'a> {
         pub fn eval(
             &self,
-            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
+            globals: &std::collections::HashMap::<&str, Vec<crate::ast::Function>>,
             locals: &std::collections::HashMap::<&str, crate::ast::Function>,
         ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
             match self.condition.eval(globals, locals)? {
@@ -384,7 +401,7 @@ mod ast {
     impl<'a> Expression<'a> {
         pub fn eval(
             &self,
-            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
+            globals: &std::collections::HashMap::<&str, Vec<crate::ast::Function>>,
             locals: &std::collections::HashMap::<&str, crate::ast::Function>,
         ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
             match self {
@@ -396,40 +413,90 @@ mod ast {
     }
 
     #[derive(Debug, FromPest)]
+    #[pest_ast(rule(Rule::parameter))]
+    pub enum Parameter<'a> {
+        Variable(Variable<'a>),
+        Literal(Type),
+    }
+
+    #[derive(Debug, FromPest)]
     #[pest_ast(rule(Rule::function))]
     pub struct Function<'a> {
         pub name: Variable<'a>,
-        pub variables: Vec<Variable<'a>>,
+        pub parameters: Vec<Parameter<'a>>,
         pub expr: Expression<'a>,
     }
 
     impl<'a> Function<'a> {
-        pub fn call(
+        pub fn matches(
             &self,
-            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
-            args: Vec<crate::ast::Type>
-        ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
-            if args.len() != self.variables.len() {
+            args: &Vec<crate::ast::Type>
+        ) -> Result<bool, Box<dyn std::error::Error>> {
+            if args.len() != self.parameters.len() {
                 return Err(Box::new(crate::err::ArgumentError{
                     // function_name: self.name.name, // teach me how to lifetime
                     function_name: "TODO",
-                    expected: self.variables.len(),
+                    expected: self.parameters.len(),
+                    actual: args.len(),
+                }));
+            }
+
+            for i in 0..self.parameters.len() {
+                match &self.parameters[i] {
+                    Parameter::Variable(_) => {},
+                    Parameter::Literal(t) => {
+                        return Ok(match t {
+                            crate::ast::Type::Int(l) => match args[i] {
+                                crate::ast::Type::Int(r) => l.val == r.val,
+                                _ => false,
+                            },
+                            crate::ast::Type::Float(l) => match args[i] {
+                                crate::ast::Type::Float(r) => l.val == r.val,
+                                _ => false,
+                            },
+                            crate::ast::Type::Bool(l) => match args[i] {
+                                crate::ast::Type::Bool(r) => l.val == r.val,
+                                _ => false,
+                            },
+                        });
+                    },
+                };
+            }
+
+            Ok(true)
+        }
+
+        pub fn call(
+            &self,
+            globals: &std::collections::HashMap::<&str, Vec<crate::ast::Function>>,
+            args: Vec<crate::ast::Type>
+        ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
+            if args.len() != self.parameters.len() {
+                return Err(Box::new(crate::err::ArgumentError{
+                    // function_name: self.name.name, // teach me how to lifetime
+                    function_name: "TODO",
+                    expected: self.parameters.len(),
                     actual: args.len(),
                 }));
             }
 
             let mut locals = std::collections::HashMap::<&str, crate::ast::Function>::new();
-            for i in 0..self.variables.len() {
-                locals.insert(
-                    self.variables[i].name,
-                    crate::ast::Function {
-                        name: crate::ast::Variable{name: self.variables[i].name},
-                        variables: vec!(),
-                        expr: crate::ast::Expression::Unary(
-                            Box::new(crate::ast::Unary::Literal(args[i].clone()))
-                        )
-                    }
-                );
+            for i in 0..self.parameters.len() {
+                match &self.parameters[i] {
+                    Parameter::Variable(v) => {
+                        locals.insert(
+                            v.name,
+                            crate::ast::Function {
+                                name: crate::ast::Variable{name: v.name},
+                                parameters: vec!(),
+                                expr: crate::ast::Expression::Unary(
+                                    Box::new(crate::ast::Unary::Literal(args[i].clone()))
+                                )
+                            }
+                        );
+                    },
+                    Parameter::Literal(_) => {},
+                };
             }
 
             self.expr.eval(globals, &locals)
@@ -463,19 +530,24 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let source = String::from_utf8(std::fs::read(&args[1])?)?;
     let mut parse_tree = muru::Parser::parse(muru::Rule::program, &source)?;
     // println!("parse tree = {:#?}", parse_tree);
-    let program: Program = Program::from_pest(&mut parse_tree).expect("infallible");
+    let program: Program = Program::from_pest(&mut parse_tree).unwrap();
     // println!("syntax tree = {:#?}", program);
 
-    let mut functions = std::collections::HashMap::<&str, ast::Function>::new();
+    let mut functions = std::collections::HashMap::<&str, Vec<ast::Function>>::new();
     for f in program.functions.into_iter() {
-        functions.insert(
-            f.name.name,
-            f
-        );
+        match functions.get_mut(f.name.name) {
+            Some(fns) => fns.push(f),
+            None => {
+                functions.insert(
+                    f.name.name,
+                    vec!(f),
+                );
+            },
+        }
     }
 
     let main = match functions.get("main") {
-        Some(f) => f,
+        Some(f) => &f[0],
         None => {
             return Err(Box::new(err::FunctionNotFoundError{name: "main"}));
         },

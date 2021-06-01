@@ -1,0 +1,31 @@
+int = @{ ("-")? ~ ASCII_DIGIT+ }
+float = @{ int ~ "." ~ ASCII_DIGIT+ }
+bool = { "true" | "false" }
+
+literal = { int | float | bool }
+
+variable = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+operator = { add | subtract | multiply | divide | eq | neq }
+    add      = { "+" }
+    subtract = { "-" }
+    multiply = { "*" }
+    divide   = { "/" }
+    eq       = { "==" }
+    neq      = { "!=" }
+
+argument = { "(" ~ expression ~ ")" | literal | variable }
+
+call = { variable ~ (argument)* }
+
+unary = { "(" ~ expression ~ ")" | literal | call }
+binary = { unary ~ operator ~ unary }
+expression = { binary | unary }
+
+assign = _{ "=" }
+function = { (variable)+ ~ assign ~ expression }
+
+line_break = _{ "\n" }
+program = { SOI ~ (function | line_break)* ~ EOI }
+
+WHITESPACE =_{ " " | "\r" | "\t" }

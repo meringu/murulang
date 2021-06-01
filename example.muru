@@ -1,0 +1,7 @@
+main = add complex 4 == 12
+
+complex = add (add 1 2) five
+
+add x y = x + y
+
+five = 5

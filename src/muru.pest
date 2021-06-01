@@ -20,7 +20,8 @@ call = { variable ~ (argument)* }
 
 unary = { "(" ~ expression ~ ")" | literal | call }
 binary = { unary ~ operator ~ unary }
-expression = { binary | unary }
+ternary = { unary ~ "?" ~ unary ~ ":" ~ unary }
+expression = { ternary | binary | unary }
 
 assign = _{ "=" }
 function = { (variable)+ ~ assign ~ expression }

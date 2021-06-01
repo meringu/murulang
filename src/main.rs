@@ -350,10 +350,35 @@ mod ast {
     }
 
     #[derive(Debug, FromPest)]
+    #[pest_ast(rule(Rule::ternary))]
+    pub struct Ternary<'a> {
+        pub condition: Unary<'a>,
+        pub truthy: Unary<'a>,
+        pub falsy: Unary<'a>,
+    }
+
+    impl<'a> Ternary<'a> {
+        pub fn eval(
+            &self,
+            globals: &std::collections::HashMap::<&str, crate::ast::Function>,
+            locals: &std::collections::HashMap::<&str, crate::ast::Function>,
+        ) -> Result<crate::ast::Type, Box<dyn std::error::Error>> {
+            match self.condition.eval(globals, locals)? {
+                crate::ast::Type::Bool(b) => match b.val {
+                    true => self.truthy.eval(globals, locals),
+                    false => self.falsy.eval(globals, locals),
+                },
+                _ => Err(Box::new(crate::err::NotImplementedError{sub: "TODO"})),
+            }
+        }
+    }
+
+    #[derive(Debug, FromPest)]
     #[pest_ast(rule(Rule::expression))]
     pub enum Expression<'a> {
         Unary(Box<Unary<'a>>),
         Binary(Box<Binary<'a>>),
+        Ternary(Box<Ternary<'a>>),
     }
 
     impl<'a> Expression<'a> {
@@ -365,6 +390,7 @@ mod ast {
             match self {
                 Expression::Unary(u) => u.eval(globals, locals),
                 Expression::Binary(b) => b.eval(globals, locals),
+                Expression::Ternary(t) => t.eval(globals, locals),
             }
         }
     }

@@ -77,8 +77,7 @@ impl Binary {
         format!("({}.{}
     {}
     {}
-)
-",
+)",
             return_type.to_wat(),
             self.operator.to_wat(),
             wat::indent(self.left.to_wat(return_type, locals_to_arg_index), 4),

@@ -59,7 +59,7 @@ impl Build {
         let wat = program.to_wat()?;
 
         if log_enabled!(Level::Debug) {
-            debug!("wat: {}", wat);
+            debug!("wat:\n{}", wat);
         }
         
         let wasm = wat2wasm(wat)?;

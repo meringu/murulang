@@ -8,7 +8,7 @@ pub fn module(inner: Vec<String>) -> String {
     format!(
 r#"(module
     {}
-)"#, indent(inner.join("\n"), 4))
+)"#, indent(inner.join("\n\n"), 4))
 }
 
 pub fn import(module: &str, function_name: &str, import_as: &str, params: Vec<&str>, result: Option<&str>) -> String {
@@ -84,5 +84,5 @@ pub fn control_if(result: Option<String>, condition: String, truthy: String, fal
     (then
         {}
     ){}
-)", res, indent(condition, 4), indent(truthy, 4), indent(f, 4))
+)", res, indent(condition, 4), indent(truthy, 8), indent(f, 4))
 }

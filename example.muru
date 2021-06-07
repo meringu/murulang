@@ -1,16 +1,20 @@
+# all murulang functions need a main
 main = (fib 11 == fibr 11) ? add complex five : 0
 
+# this function is making other function calls
 complex = add (add 1 3) five
 
+# some binary operators are availible
 add x y = x + y
 
+# functions can be as simple as constant values
 five = 5
 
 # Nasty ternary one liner
-fibr :: int -> int # need a type sig for some recursive functions
+fibr :: int -> int # some recursive functions need a type signature
 fibr n = (n == 0) ? 0 : ((n == 1) ? 1 : (fibr (n - 1) + fibr (n - 2)))
 
 # Multiline function parameter matching
-fib 0 = 0
+fib 0 = 0 # no type signature needed here as the compiler is smart enough to infer
 fib 1 = 1
-fib n = fib (n - 1) + fib (n - 2)
+fib n = fib (n - 1) + fib (n - 2) # the catch all case will be evaluated for any n that is not 0 or 1

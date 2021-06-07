@@ -1,4 +1,4 @@
-main = (fib 10 == fibr 10) ? add complex five : 0
+main = (fib 11 == fibr 11) ? add complex five : 0
 
 complex = add (add 1 3) five
 
@@ -7,6 +7,7 @@ add x y = x + y
 five = 5
 
 # Nasty ternary one liner
+fibr :: int -> int # need a type sig for some recursive functions
 fibr n = (n == 0) ? 0 : ((n == 1) ? 1 : (fibr (n - 1) + fibr (n - 2)))
 
 # Multiline function parameter matching

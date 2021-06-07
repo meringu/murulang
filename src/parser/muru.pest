@@ -24,11 +24,18 @@ ternary = { unary ~ "?" ~ unary ~ ":" ~ unary }
 expression = { ternary | binary | unary }
 
 assign = _{ "=" }
-parameter = { variable | literal }
+parameter = { literal | variable }
 function = { variable ~ (parameter)* ~ assign ~ expression }
 
-line_break = _{ "\n" }
-comment = _{ "#" ~ (ASCII_ALPHANUMERIC | " " | "\t")* }
-program = { SOI ~ (comment | function | line_break)* ~ EOI }
+int_type = { "int" }
+float_type = { "float" }
+bool_type = { "bool" }
+var_type = { int_type | float_type | bool_type }
+function_signature = { variable ~ "::" ~ (var_type ~ ("->" ~ var_type)*)? }
 
-WHITESPACE =_{ " " | "\r" | "\t" }
+line_break = _{ "\n" }
+comment = _{ "#" ~ (!"\n" ~ ANY)* }
+line = { function_signature | function }
+program = { SOI ~ (comment | line | line_break)* ~ EOI }
+
+WHITESPACE = _{ " " | "\r" | "\t" }

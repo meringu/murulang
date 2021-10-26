@@ -91,7 +91,10 @@ impl Call {
             }
         };
 
-        Err(Box::new(crate::err::NoFunctionMatchesError{name: self.variable.name}))
+        match signatures.get(self.variable.name) {
+            Some(sig) => Ok(sig.return_type),
+            None => Err(Box::new(crate::err::NoFunctionMatchesError{name: self.variable.name})),
+        }
     }
 
     pub fn to_wat(&self, return_type: VariableType, locals_to_arg_index: &HashMap::<&str, usize>) -> String {

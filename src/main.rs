@@ -12,6 +12,7 @@ mod err;
 mod parser;
 mod wat;
 mod command;
+mod stdlib;
 
 use crate::command::SubCommand;
 use clap::{AppSettings, Clap};

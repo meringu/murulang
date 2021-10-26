@@ -10,6 +10,7 @@ use wabt::wat2wasm;
 use crate::ast;
 use crate::err;
 use crate::parser;
+use crate::stdlib;
 
 // Build a muru program
 #[derive(Clap, Debug)]
@@ -56,7 +57,7 @@ impl Build {
             debug!("ast:\n{:#?}", program);
         }
 
-        let wat = program.to_wat()?;
+        let wat = program.to_wat(stdlib::signatures(), stdlib::wat())?;
 
         if log_enabled!(Level::Debug) {
             debug!("wat:\n{}", wat);

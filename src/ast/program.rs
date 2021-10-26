@@ -8,7 +8,7 @@ use std::collections::{HashMap, HashSet};
 #[pest_ast(rule(Rule::program))]
 pub struct Program {
     pub lines: Vec<Line>,
-    eoi: EOI,
+    _eoi: EOI,
 }
 
 #[derive(Debug, FromPest)]
@@ -16,10 +16,15 @@ pub struct Program {
 struct EOI;
 
 impl Program {
-    pub fn to_wat(&self) -> Result<String, Box::<dyn std::error::Error>> {
+    pub fn to_wat(&self, included_sigs: HashMap::<&str, FunctionSignature>, included_fns: Vec<String>) -> Result<String, Box::<dyn std::error::Error>> {
         let mut functions = HashMap::<&str, Vec<&Function>>::new();
         let mut function_signatures = HashMap::<&str, FunctionSignature>::new();
         let mut validated = HashSet::<&str>::new();
+
+        for (name, sig) in included_sigs {
+            function_signatures.insert(name, sig);
+            functions.insert(name, vec!());
+        }
 
         for l in self.lines.iter() {
             match l {
@@ -67,13 +72,6 @@ impl Program {
                 vec!(wat::TYPE_I32, wat::TYPE_I32, wat::TYPE_I32, wat::TYPE_I32),
                 Some(wat::TYPE_I32),
             ),
-            wat::import(
-                "wasi_unstable",
-                "proc_exit",
-                "exit",
-                vec!(wat::TYPE_I32),
-                None,
-            ),
             wat::memory(1),
             wat::export("memory", wat::memory(0)),
             wat::function(
@@ -82,11 +80,19 @@ impl Program {
                 None,
                 None,
                 vec!(
-                    wat::call("main", vec!()),
-                    wat::call("exit", vec!()),
+                    wat::call("printi", vec!(
+                        wat::call("main", vec!())
+                    )),
+                    wat::call("printc", vec!(
+                        wat::const_i32(10),
+                    )),
                 ),
             ),
         );
+
+        for included_fn in included_fns {
+            module_inner.push(included_fn);
+        }
 
         for (fname, sig) in &function_signatures {
             let mut fns = vec!();
@@ -97,6 +103,10 @@ impl Program {
                     break
                 }
                 fns.push((cond, f));
+            }
+
+            if fns.len() == 0 {
+                continue;
             }
 
             if fns[fns.len()-1].0.is_some() {

@@ -1,4 +1,5 @@
 mod argument_error;
+mod function_already_defined_error;
 mod function_case_missing_error;
 mod function_case_unreachable_error;
 mod function_not_found_error;
@@ -10,6 +11,7 @@ mod type_mismatch_error;
 mod untyped_function_error;
 
 pub use crate::err::argument_error::ArgumentError;
+pub use crate::err::function_already_defined_error::FunctionAlreadyDefinedError;
 pub use crate::err::function_case_missing_error::FunctionCaseMissingError;
 pub use crate::err::function_case_unreachable_error::FunctionCaseUnreachableError;
 pub use crate::err::function_not_found_error::FunctionNotFoundError;

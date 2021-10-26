@@ -25,6 +25,14 @@ pub fn export(name: &str, wat: String) -> String {
     format!(r#"(export "{}" {})"#, name, wat)
 }
 
+pub fn store(addr: String, val: String) -> String {
+    format!("(i32.store {} {})", addr, val)
+}
+
+pub fn get_local(index: i32) -> String {
+    format!("(get_local {})", index)
+}
+
 pub fn memory(i: i32) -> String {
     format!("(memory {})", i)
 }
@@ -63,6 +71,42 @@ pub fn call(refr: &str, args: Vec<String>) -> String {
     {}
 )", refr, indent(args.join("\n"), 4)),
     }
+}
+
+pub fn drop() -> String {
+    String::from("drop")
+}
+
+pub fn const_i32(val: i32) -> String {
+    format!("(i32.const {})", val)
+}
+
+pub fn i32_add(left: String, right: String) -> String {
+    format!("(i32.add
+    {}
+    {}
+)", indent(left, 4), indent(right, 4))
+}
+
+pub fn i32_ne(left: String, right: String) -> String {
+    format!("(i32.ne
+    {}
+    {}
+)", indent(left, 4), indent(right, 4))
+}
+
+pub fn i32_rem_u(left: String, right: String) -> String {
+    format!("(i32.rem_u
+    {}
+    {}
+)", indent(left, 4), indent(right, 4))
+}
+
+pub fn i32_div_u(left: String, right: String) -> String {
+    format!("(i32.div_u
+    {}
+    {}
+)", indent(left, 4), indent(right, 4))
 }
 
 pub fn control_if(result: Option<String>, condition: String, truthy: String, falsy: Option<String>) -> String {

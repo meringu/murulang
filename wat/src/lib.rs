@@ -1,5 +1,3 @@
-pub const TYPE_I32: &'static str = "i32";
-
 pub fn indent(wat: String, dent: usize) -> String {
     wat.split("\n").collect::<Vec<&str>>().join(&format!("\n{}", " ".repeat(dent)))
 }
@@ -25,8 +23,12 @@ pub fn export(name: &str, wat: String) -> String {
     format!(r#"(export "{}" {})"#, name, wat)
 }
 
-pub fn store(addr: String, val: String) -> String {
+pub fn i32_store(addr: String, val: String) -> String {
     format!("(i32.store {} {})", addr, val)
+}
+
+pub fn i32_const(val: i32) -> String {
+    format!("(i32.const {})", val)
 }
 
 pub fn get_local(index: i32) -> String {
@@ -75,10 +77,6 @@ pub fn call(refr: &str, args: Vec<String>) -> String {
 
 pub fn drop() -> String {
     String::from("drop")
-}
-
-pub fn const_i32(val: i32) -> String {
-    format!("(i32.const {})", val)
 }
 
 pub fn i32_add(left: String, right: String) -> String {

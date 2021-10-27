@@ -22,20 +22,20 @@ pub fn wat() -> String {
         vec!(
             wat::control_if(
                 None,
-                wat::i32_ne(wat::const_i32(0), wat::get_local(0)),
+                wat::i32_ne(wat::i32_const(0), wat::get_local(0)),
                 vec!(
                     wat::call(
                         "printi",
                         vec!(
-                            wat::i32_div_u(wat::get_local(0), wat::const_i32(10)),
+                            wat::i32_div_u(wat::get_local(0), wat::i32_const(10)),
                         ),
                     ),
                     wat::call(
                         "printc",
                         vec!(
                             wat::i32_add(
-                                wat::const_i32(48),
-                                wat::i32_rem_u(wat::get_local(0), wat::const_i32(10)),
+                                wat::i32_const(48),
+                                wat::i32_rem_u(wat::get_local(0), wat::i32_const(10)),
                             )
                         )
                     ),

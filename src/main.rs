@@ -7,10 +7,11 @@ extern crate pest;
 
 extern crate wabt;
 
+extern crate wat;
+
 mod ast;
 mod err;
 mod parser;
-mod wat;
 mod command;
 mod stdlib;
 

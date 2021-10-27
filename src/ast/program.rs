@@ -69,8 +69,8 @@ impl Program {
                 "wasi_unstable",
                 "fd_write",
                 "fd_write",
-                vec!(wat::TYPE_I32, wat::TYPE_I32, wat::TYPE_I32, wat::TYPE_I32),
-                Some(wat::TYPE_I32),
+                vec!("i32", "i32", "i32", "i32"),
+                Some("i32"),
             ),
             wat::memory(1),
             wat::export("memory", wat::memory(0)),
@@ -84,7 +84,7 @@ impl Program {
                         wat::call("main", vec!())
                     )),
                     wat::call("printc", vec!(
-                        wat::const_i32(10),
+                        wat::i32_const(10),
                     )),
                 ),
             ),

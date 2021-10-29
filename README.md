@@ -10,8 +10,8 @@ Murulang compiles to WebAssembly and WASI
 1. Run the example with:
 
     ```sh
-    cargo run -- build example.muru
-    wasmtime example
+    cargo run -- build examples/example.muru
+    wasmtime ./examples/example
     echo $?
     ```
 

@@ -1,11 +1,10 @@
 use ast::Program;
 use clap::Clap;
 use from_pest::FromPest;
-use log::{Level, log_enabled, debug};
+use log::{debug, log_enabled, Level};
 use pest::Parser;
 use std::error;
 use std::io::Write;
-use wabt::wat2wasm;
 
 use crate::ast;
 use crate::err;
@@ -28,15 +27,15 @@ impl Build {
         let source = match self.source.ends_with(".muru") {
             true => &self.source,
             false => {
-                return Err(Box::new(err::StandardError{s: "source not a .muru file"}));
+                return Err(Box::new(err::StandardError {
+                    s: "source not a .muru file",
+                }));
             }
         };
 
         let output = match &self.output {
             Some(o) => o,
-            None => {
-                &source[..source.len() - ".muru".len()]
-            }
+            None => &source[..source.len() - ".muru".len()],
         };
 
         let source_content = String::from_utf8(std::fs::read(source)?)?;
@@ -57,16 +56,15 @@ impl Build {
             debug!("ast:\n{:#?}", program);
         }
 
-        let wat = program.to_wat(stdlib::signatures(), stdlib::wat())?;
+        let wasm = program.to_wasm(stdlib::signatures(), stdlib::wat())?;
 
         if log_enabled!(Level::Debug) {
-            debug!("wat:\n{}", wat);
+            debug!("wat:\n{}", wasm);
         }
-        
-        let wasm = wat2wasm(wat)?;
+        let bin = wasm.bin()?;
 
         let mut file = std::fs::File::create(std::path::Path::new(output))?;
-        file.write_all(&wasm)?;
+        file.write_all(&bin)?;
 
         Ok(())
     }

@@ -5,16 +5,10 @@ use crate::ast::FunctionSignature;
 
 use std::collections::HashMap;
 
-pub fn signatures() -> HashMap::<&'static str, FunctionSignature> {
-    HashMap::<&'static str, FunctionSignature>::from([
-        printc::signature(),
-        printi::signature(),
-    ])
+pub fn signatures() -> HashMap<&'static str, FunctionSignature> {
+    HashMap::<&'static str, FunctionSignature>::from([printc::signature(), printi::signature()])
 }
 
-pub fn wat() -> Vec<String> {
-    vec!(
-        printc::wat(),
-        printi::wat(),
-    )
+pub fn funcs() -> Vec<wasm::SExpression> {
+    vec![printc::func(), printi::func()]
 }

@@ -1,13 +1,6 @@
 use crate::ast;
 use crate::wat;
 
-// static NAME: &str = "printi";
-// static SIGNATURE: ast::FunctionSignature = ast::FunctionSignature {
-//     arg_types: vec!(),
-//     return_type: ast::VariableType::Int,
-// };
-// static BODY: wast
-
 pub fn signature() -> (&'static str, ast::FunctionSignature) {
     (
         "printi",
@@ -18,13 +11,13 @@ pub fn signature() -> (&'static str, ast::FunctionSignature) {
     )
 }
 
-pub fn wat() -> String {
-    wat::function(
+pub fn func() -> wasm::SExpression {
+    wasm::func(
         "printi",
         None,
-        Some(vec!["i32".to_string()]),
+        Some(wasm::param(vec![wasm::Types::I32])),
         None,
-        vec![wat::control_if(
+        vec![wasm::SExpression::Atom(wat::control_if(
             None,
             wat::i32_ne(wat::i32_const(0), wat::get_local(0)),
             vec![
@@ -42,6 +35,6 @@ pub fn wat() -> String {
             ]
             .join("\n"),
             None,
-        )],
+        ))],
     )
 }

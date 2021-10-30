@@ -2,24 +2,24 @@ use std::error;
 use std::fmt;
 use wabt::wat2wasm;
 
-pub enum SExpresion {
+pub enum SExpression {
     Atom(String),
-    List(Vec<SExpresion>),
+    List(Vec<SExpression>),
 }
 
-impl fmt::Display for SExpresion {
+impl fmt::Display for SExpression {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                SExpresion::Atom(s) => s.to_string(),
-                SExpresion::List(v) => {
+                SExpression::Atom(s) => s.to_string(),
+                SExpression::List(v) => {
                     let has_depth = v
                         .iter()
                         .map(|sexp| match sexp {
-                            SExpresion::Atom(_) => false,
-                            SExpresion::List(_) => true,
+                            SExpression::Atom(_) => false,
+                            SExpression::List(_) => true,
                         })
                         .reduce(|acc, i| acc || i)
                         .unwrap_or(false);
@@ -57,7 +57,7 @@ impl fmt::Display for SExpresion {
     }
 }
 
-impl SExpresion {
+impl SExpression {
     pub fn bin(self) -> Result<Vec<u8>, Box<dyn error::Error>> {
         Ok(wat2wasm(self.to_string())?)
     }
@@ -86,52 +86,56 @@ impl fmt::Display for Types {
 }
 
 impl Types {
-    pub fn constant(&self, val: &str) -> SExpresion {
-        SExpresion::List(vec![
-            SExpresion::Atom(format!("{}.const", self)),
-            SExpresion::Atom(val.to_string()),
+    pub fn constant(&self, val: &str) -> SExpression {
+        SExpression::List(vec![
+            SExpression::Atom(format!("{}.const", self)),
+            SExpression::Atom(val.to_string()),
         ])
     }
 
-    pub fn store(&self, align: u32, offset: u32) -> SExpresion {
-        SExpresion::List(vec![
-            SExpresion::Atom(format!("{}.store", self)),
-            SExpresion::Atom(align.to_string()),
-            SExpresion::Atom(offset.to_string()),
+    pub fn store(&self, align: SExpression, offset: SExpression) -> SExpression {
+        SExpression::List(vec![
+            SExpression::Atom(format!("{}.store", self)),
+            SExpression::Atom(align.to_string()),
+            SExpression::Atom(offset.to_string()),
         ])
     }
 }
 
-pub fn call(func: &str, args: Vec<SExpresion>) -> SExpresion {
-    let mut l = vec![SExpresion::Atom(format!("call ${}", func))];
+pub fn call(func: &str, args: Vec<SExpression>) -> SExpression {
+    let mut l = vec![SExpression::Atom(format!("call ${}", func))];
 
     for arg in args.into_iter() {
         l.push(arg)
     }
 
-    return SExpresion::List(l);
+    return SExpression::List(l);
 }
 
-pub fn export(name: &str, inner: Option<SExpresion>) -> SExpresion {
+pub fn drop() -> SExpression {
+    SExpression::Atom("drop".to_string())
+}
+
+pub fn export(name: &str, inner: Option<SExpression>) -> SExpression {
     let mut l = vec![
-        SExpresion::Atom("export".to_string()),
-        SExpresion::Atom(format!("\"{}\"", name)),
+        SExpression::Atom("export".to_string()),
+        SExpression::Atom(format!("\"{}\"", name)),
     ];
 
     if let Some(i) = inner {
         l.push(i);
     }
 
-    SExpresion::List(l)
+    SExpression::List(l)
 }
 
 pub fn func(
     name: &str,
-    export: Option<SExpresion>,
-    params: Option<SExpresion>,
-    result: Option<SExpresion>,
-    body: Vec<SExpresion>,
-) -> SExpresion {
+    export: Option<SExpression>,
+    params: Option<SExpression>,
+    result: Option<SExpression>,
+    body: Vec<SExpression>,
+) -> SExpression {
     let e = match export {
         Some(s) => format!(" {}", s),
         _ => "".to_string(),
@@ -144,59 +148,66 @@ pub fn func(
     if let Some(r) = result {
         sig = format!("{} {}", sig, r)
     }
-    let mut l = vec![SExpresion::Atom(sig)];
+    let mut l = vec![SExpression::Atom(sig)];
 
     for b in body {
         l.push(b);
     }
 
-    SExpresion::List(l)
+    SExpression::List(l)
+}
+
+pub fn get_local(local: &str) -> SExpression {
+    SExpression::List(vec![
+        SExpression::Atom("get_local".to_string()),
+        SExpression::Atom(local.to_string()),
+    ])
 }
 
 pub fn import(
     module: &str,
     function: &str,
     import_as: &str,
-    params: Option<SExpresion>,
-    result: Option<SExpresion>,
-) -> SExpresion {
-    SExpresion::List(vec![
-        SExpresion::Atom(format!("import \"{}\" \"{}\"", module, function)),
+    params: Option<SExpression>,
+    result: Option<SExpression>,
+) -> SExpression {
+    SExpression::List(vec![
+        SExpression::Atom(format!("import \"{}\" \"{}\"", module, function)),
         func(import_as, None, params, result, vec![]),
     ])
 }
 
-pub fn memory(i: i32) -> SExpresion {
-    SExpresion::List(vec![
-        SExpresion::Atom("memory".to_string()),
-        SExpresion::Atom(i.to_string()),
+pub fn memory(i: i32) -> SExpression {
+    SExpression::List(vec![
+        SExpression::Atom("memory".to_string()),
+        SExpression::Atom(i.to_string()),
     ])
 }
 
-pub fn module(inner: Vec<SExpresion>) -> SExpresion {
-    let mut inn = vec![SExpresion::Atom("module".to_string())];
+pub fn module(inner: Vec<SExpression>) -> SExpression {
+    let mut inn = vec![SExpression::Atom("module".to_string())];
 
     for node in inner {
         inn.push(node)
     }
 
-    SExpresion::List(inn)
+    SExpression::List(inn)
 }
 
-pub fn param(types: Vec<Types>) -> SExpresion {
-    let mut l = vec![SExpresion::Atom("param".to_string())];
+pub fn param(types: Vec<Types>) -> SExpression {
+    let mut l = vec![SExpression::Atom("param".to_string())];
 
     for t in types.iter() {
-        l.push(SExpresion::Atom(t.to_string()))
+        l.push(SExpression::Atom(t.to_string()))
     }
 
-    SExpresion::List(l)
+    SExpression::List(l)
 }
 
-pub fn result(t: Types) -> SExpresion {
-    SExpresion::List(vec![
-        SExpresion::Atom("result".to_string()),
-        SExpresion::Atom(t.to_string()),
+pub fn result(t: Types) -> SExpression {
+    SExpression::List(vec![
+        SExpression::Atom("result".to_string()),
+        SExpression::Atom(t.to_string()),
     ])
 }
 
@@ -213,10 +224,10 @@ mod tests {
     fn test_module() {
         assert_eq!(
             module(vec!(
-                SExpresion::Atom("foo".to_string()),
-                SExpresion::List(vec!(
-                    SExpresion::Atom("bar".to_string()),
-                    SExpresion::Atom("baz".to_string()),
+                SExpression::Atom("foo".to_string()),
+                SExpression::List(vec!(
+                    SExpression::Atom("bar".to_string()),
+                    SExpression::Atom("baz".to_string()),
                 )),
             ))
             .to_string(),

@@ -19,8 +19,8 @@ impl Program {
     pub fn to_wasm(
         &self,
         included_sigs: HashMap<&str, FunctionSignature>,
-        included_fns: Vec<String>,
-    ) -> Result<wasm::SExpresion, Box<dyn std::error::Error>> {
+        included_fns: Vec<wasm::SExpression>,
+    ) -> Result<wasm::SExpression, Box<dyn std::error::Error>> {
         let mut functions = HashMap::<&str, Vec<&Function>>::new();
         let mut function_signatures = HashMap::<&str, FunctionSignature>::new();
         let mut validated = HashSet::<&str>::new();
@@ -88,23 +88,23 @@ impl Program {
                 Some(wasm::result(wasm::Types::I32)),
             )
             .to_string(),
-            wasm::memory(1).to_string(),
             wasm::export("memory", Some(wasm::memory(0))).to_string(),
+            wasm::memory(1).to_string(),
             wasm::func(
                 "_start",
                 Some(wasm::export("_start", None)),
                 None,
                 None,
                 vec![
-                    wasm::call("printi", vec![wasm::call("main", vec![])]),
-                    wasm::call("printc", vec![wasm::Types::I32.constant("10")]),
+                    wasm::call("printi", vec![wasm::call("main", vec![])]), // call and print output of main
+                    wasm::call("printc", vec![wasm::Types::I32.constant("10")]), // print new line
                 ],
             )
             .to_string(),
         ];
 
         for included_fn in included_fns {
-            module_inner.push(included_fn);
+            module_inner.push(included_fn.to_string());
         }
 
         for (fname, sig) in &function_signatures {
@@ -147,6 +147,6 @@ impl Program {
             ));
         }
 
-        Ok(wasm::SExpresion::Atom(wat::module(module_inner)))
+        Ok(wasm::SExpression::Atom(wat::module(module_inner)))
     }
 }

@@ -56,7 +56,7 @@ impl Build {
             debug!("ast:\n{:#?}", program);
         }
 
-        let wasm = program.to_wasm(stdlib::signatures(), stdlib::wat())?;
+        let wasm = program.to_wasm(stdlib::signatures(), stdlib::funcs())?;
 
         if log_enabled!(Level::Debug) {
             debug!("wat:\n{}", wasm);

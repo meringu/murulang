@@ -75,25 +75,32 @@ impl Program {
         }
 
         let mut module_inner = vec![
-            wat::import(
+            wasm::import(
                 "wasi_unstable",
                 "fd_write",
                 "fd_write",
-                vec!["i32", "i32", "i32", "i32"],
-                Some("i32"),
-            ),
-            wat::memory(1),
-            wat::export("memory", wat::memory(0)),
-            wat::function(
+                Some(wasm::param(vec![
+                    wasm::Types::I32,
+                    wasm::Types::I32,
+                    wasm::Types::I32,
+                    wasm::Types::I32,
+                ])),
+                Some(wasm::result(wasm::Types::I32)),
+            )
+            .to_string(),
+            wasm::memory(1).to_string(),
+            wasm::export("memory", Some(wasm::memory(0))).to_string(),
+            wasm::func(
                 "_start",
-                Some("_start"),
+                Some(wasm::export("_start", None)),
                 None,
                 None,
                 vec![
-                    wat::call("printi", vec![wat::call("main", vec![])]),
-                    wat::call("printc", vec![wat::i32_const(10)]),
+                    wasm::call("printi", vec![wasm::call("main", vec![])]),
+                    wasm::call("printc", vec![wasm::Types::I32.constant("10")]),
                 ],
-            ),
+            )
+            .to_string(),
         ];
 
         for included_fn in included_fns {

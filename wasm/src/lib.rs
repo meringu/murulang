@@ -26,10 +26,25 @@ impl fmt::Display for SExpresion {
 
                     match has_depth && v.len() > 1 {
                         true => {
+                            // format!(
+                            //     "({}\n)",
+                            //     v.iter()
+                            //         .map(|sexp| sexp.to_string())
+                            //         .reduce(|l, r| format!("{}\n    {}", l, r))
+                            //         .unwrap_or("".to_string())
+                            // )
+
                             format!(
-                                "({}\n)",
-                                v.iter()
-                                    .map(|sexp| sexp.to_string())
+                                "({}\n    {}\n)",
+                                v.first().unwrap().to_string(),
+                                v[1..]
+                                    .iter()
+                                    .map(|sexp| sexp
+                                        .to_string()
+                                        .split("\n")
+                                        .map(|s| s.to_string())
+                                        .reduce(|l, r| format!("{}\n    {}", l, r))
+                                        .unwrap_or("".to_string()))
                                     .reduce(|l, r| format!("{}\n    {}", l, r))
                                     .unwrap_or("".to_string())
                             )
@@ -79,6 +94,13 @@ impl fmt::Display for Types {
 }
 
 impl Types {
+    pub fn constant(&self, val: &str) -> SExpresion {
+        SExpresion::List(vec![
+            SExpresion::Atom(format!("{}.const", self)),
+            SExpresion::Atom(val.to_string()),
+        ])
+    }
+
     pub fn store(&self, align: u32, offset: u32) -> SExpresion {
         SExpresion::List(vec![
             SExpresion::Atom(format!("{}.store", self)),
@@ -86,6 +108,70 @@ impl Types {
             SExpresion::Atom(offset.to_string()),
         ])
     }
+}
+
+pub fn call(func: &str, args: Vec<SExpresion>) -> SExpresion {
+    let mut l = vec![SExpresion::Atom(format!("call ${}", func))];
+
+    for arg in args.into_iter() {
+        l.push(arg)
+    }
+
+    return SExpresion::List(l);
+}
+
+pub fn export(name: &str, inner: Option<SExpresion>) -> SExpresion {
+    let mut l = vec![
+        SExpresion::Atom("export".to_string()),
+        SExpresion::Atom(format!("\"{}\"", name)),
+    ];
+
+    if let Some(i) = inner {
+        l.push(i);
+    }
+
+    SExpresion::List(l)
+}
+
+pub fn func(
+    name: &str,
+    export: Option<SExpresion>,
+    params: Option<SExpresion>,
+    result: Option<SExpresion>,
+    body: Vec<SExpresion>,
+) -> SExpresion {
+    let e = match export {
+        Some(s) => format!(" {}", s),
+        _ => "".to_string(),
+    };
+
+    let mut sig = format!("func ${}{}", name, e);
+    if let Some(p) = params {
+        sig = format!("{} {}", sig, p)
+    }
+    if let Some(r) = result {
+        sig = format!("{} {}", sig, r)
+    }
+    let mut l = vec![SExpresion::Atom(sig)];
+
+    for b in body {
+        l.push(b);
+    }
+
+    SExpresion::List(l)
+}
+
+pub fn import(
+    module: &str,
+    function: &str,
+    import_as: &str,
+    params: Option<SExpresion>,
+    result: Option<SExpresion>,
+) -> SExpresion {
+    SExpresion::List(vec![
+        SExpresion::Atom(format!("import \"{}\" \"{}\"", module, function)),
+        func(import_as, None, params, result, vec![]),
+    ])
 }
 
 pub fn memory(i: i32) -> SExpresion {
@@ -103,6 +189,23 @@ pub fn module(inner: Vec<SExpresion>) -> SExpresion {
     }
 
     SExpresion::List(inn)
+}
+
+pub fn param(types: Vec<Types>) -> SExpresion {
+    let mut l = vec![SExpresion::Atom("param".to_string())];
+
+    for t in types.iter() {
+        l.push(SExpresion::Atom(t.to_string()))
+    }
+
+    SExpresion::List(l)
+}
+
+pub fn result(t: Types) -> SExpresion {
+    SExpresion::List(vec![
+        SExpresion::Atom("result".to_string()),
+        SExpresion::Atom(t.to_string()),
+    ])
 }
 
 #[cfg(test)]

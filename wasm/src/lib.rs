@@ -26,14 +26,6 @@ impl fmt::Display for SExpresion {
 
                     match has_depth && v.len() > 1 {
                         true => {
-                            // format!(
-                            //     "({}\n)",
-                            //     v.iter()
-                            //         .map(|sexp| sexp.to_string())
-                            //         .reduce(|l, r| format!("{}\n    {}", l, r))
-                            //         .unwrap_or("".to_string())
-                            // )
-
                             format!(
                                 "({}\n    {}\n)",
                                 v.first().unwrap().to_string(),

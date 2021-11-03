@@ -1,4 +1,4 @@
-// Defines all the numeric instrucitons
+// Defines the numeric instrucitons
 //
 // See: https://webassembly.github.io/spec/core/syntax/instructions.html#syntax-instr-numeric
 //

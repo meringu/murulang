@@ -1,3 +1,8 @@
+// Defines the variable instrucitons
+//
+// See: https://webassembly.github.io/spec/core/syntax/instructions.html#variable-instructions
+//
+
 use crate::expression::{Expressable, Expression};
 use crate::instructions::helpers::ident_to_instruction;
 

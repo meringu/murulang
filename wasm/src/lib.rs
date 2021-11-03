@@ -2,6 +2,12 @@ use std::error;
 use std::fmt;
 use wabt::wat2wasm;
 
+mod expression;
+mod instructions;
+
+pub use crate::expression::*;
+pub use crate::instructions::*;
+
 pub enum SExpression {
     Atom(String),
     List(Vec<SExpression>),
@@ -240,6 +246,11 @@ mod tests {
 
     #[test]
     fn test_store() {
-        assert_eq!(Types::I32.store(1, 2).to_string(), "(i32.store 1 2)",);
+        assert_eq!(
+            Types::I32
+                .store(Types::I32.constant("1"), Types::I32.constant("2"))
+                .to_string(),
+            "(i32.store (i32.const 1) (i32.const 2))",
+        );
     }
 }

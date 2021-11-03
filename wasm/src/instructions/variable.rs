@@ -1,57 +1,56 @@
 use crate::expression::{Expressable, Expression};
+use crate::instructions::helpers::ident_to_instruction;
 
 macro_rules! make_variable {
-    ($name: ident, $instruction: literal) => {
-        pub enum $name<'a> {
-            Id(u32),
-            Name(&'a str),
-        }
-
-        impl<'a> $name<'a> {
-            pub fn new<A>(a: A) -> Self
-            where
-                A: Into<$name<'a>>,
-            {
-                a.into()
+    ($($name: ident),+) => {
+        $(
+            pub enum $name<'a> {
+                Id(u32),
+                Name(&'a str),
             }
-        }
 
-        impl<'a> From<u32> for $name<'a> {
-            fn from(id: u32) -> $name<'a> {
-                $name::Id(id)
+            impl<'a> $name<'a> {
+                pub fn new<A>(a: A) -> Self
+                where
+                    A: Into<$name<'a>>,
+                {
+                    a.into()
+                }
             }
-        }
 
-        impl<'a> From<&'a str> for $name<'a> {
-            fn from(name: &'a str) -> $name<'a> {
-                $name::Name(name)
+            impl<'a> From<u32> for $name<'a> {
+                fn from(id: u32) -> $name<'a> {
+                    $name::Id(id)
+                }
             }
-        }
 
-        impl Expressable for $name<'_> {
-            fn to_expression(&self) -> Expression {
-                Expression::List(vec![
-                    Expression::Atom($instruction.to_string()),
-                    Expression::Atom(match self {
-                        $name::Id(id) => id.to_string(),
-                        $name::Name(name) => {
-                            let mut refr = String::with_capacity(name.len() + 1);
-                            refr.push('$');
-                            refr.push_str(name);
-                            refr
-                        }
-                    }),
-                ])
+            impl<'a> From<&'a str> for $name<'a> {
+                fn from(name: &'a str) -> $name<'a> {
+                    $name::Name(name)
+                }
             }
-        }
+
+            impl Expressable for $name<'_> {
+                fn to_expression(&self) -> Expression {
+                    Expression::List(vec![
+                        Expression::Atom(ident_to_instruction!($name)),
+                        Expression::Atom(match self {
+                            $name::Id(id) => id.to_string(),
+                            $name::Name(name) => {
+                                let mut refr = String::with_capacity(name.len() + 1);
+                                refr.push('$');
+                                refr.push_str(name);
+                                refr
+                            }
+                        }),
+                    ])
+                }
+            }
+        )*
     };
 }
 
-make_variable!(LocalGet, "local.get");
-make_variable!(LocalSet, "local.set");
-make_variable!(LocalTee, "local.tee");
-make_variable!(GlobalGet, "global.get");
-make_variable!(GlobalSet, "global.set");
+make_variable!(LocalGet, LocalSet, LocalTee, GlobalGet, GlobalSet);
 
 #[cfg(test)]
 mod tests {

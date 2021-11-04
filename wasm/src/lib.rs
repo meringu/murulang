@@ -4,9 +4,11 @@ use wabt::wat2wasm;
 
 mod expression;
 mod instructions;
+mod modules;
 
 pub use crate::expression::*;
 pub use crate::instructions::*;
+pub use crate::modules::*;
 
 pub enum SExpression {
     Atom(String),
@@ -64,7 +66,7 @@ impl fmt::Display for SExpression {
 }
 
 impl SExpression {
-    pub fn bin(self) -> Result<Vec<u8>, Box<dyn error::Error>> {
+    pub fn bin(self) -> std::result::Result<Vec<u8>, Box<dyn error::Error>> {
         Ok(wat2wasm(self.to_string())?)
     }
 }

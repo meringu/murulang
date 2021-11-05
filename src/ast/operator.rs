@@ -1,47 +1,47 @@
+use super::util::span_into_phantomdata;
 use crate::parser::Rule;
-use super::util::{span_into_phantomdata};
 use std::marker::PhantomData;
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::add))]
 pub struct Add {
     #[pest_ast(outer(with(span_into_phantomdata)))]
-    n: PhantomData<()>
+    n: PhantomData<()>,
 }
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::subtract))]
 pub struct Subtract {
     #[pest_ast(outer(with(span_into_phantomdata)))]
-    n: PhantomData<()>
+    n: PhantomData<()>,
 }
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::multiply))]
 pub struct Multiply {
     #[pest_ast(outer(with(span_into_phantomdata)))]
-    n: PhantomData<()>
+    n: PhantomData<()>,
 }
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::divide))]
 pub struct Divide {
     #[pest_ast(outer(with(span_into_phantomdata)))]
-    n: PhantomData<()>
+    n: PhantomData<()>,
 }
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::eq))]
 pub struct Eq {
     #[pest_ast(outer(with(span_into_phantomdata)))]
-    n: PhantomData<()>
+    n: PhantomData<()>,
 }
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::neq))]
 pub struct Neq {
     #[pest_ast(outer(with(span_into_phantomdata)))]
-    n: PhantomData<()>
+    n: PhantomData<()>,
 }
 
 #[derive(Debug, FromPest, Copy, Clone)]
@@ -64,7 +64,8 @@ impl Operator {
             Operator::Divide(_) => "div",
             Operator::Eq(_) => "eq",
             Operator::Neq(_) => "ne",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 

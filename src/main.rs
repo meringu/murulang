@@ -10,14 +10,14 @@ extern crate wabt;
 extern crate wat;
 
 mod ast;
+mod command;
 mod err;
 mod parser;
-mod command;
 mod stdlib;
 
 use crate::command::SubCommand;
 use clap::{AppSettings, Clap};
-use log::{Level, log_enabled, debug, error};
+use log::{debug, error, log_enabled, Level};
 
 #[derive(Clap, Debug)]
 #[clap(version = "1.0", author = "Henry Muru Paenga <meringu@gmail.com>")]
@@ -38,7 +38,7 @@ fn main() {
     }
 
     match opts.subcmd.execute() {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => {
             error!("{}", e);
             process::exit(1);

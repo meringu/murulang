@@ -5,7 +5,11 @@ pub struct UntypedFunctionError {
 
 impl std::fmt::Display for UntypedFunctionError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "untyped function error: could not determine type for function {}", self.function_name)
+        write!(
+            f,
+            "untyped function error: could not determine type for function {}",
+            self.function_name
+        )
     }
 }
 

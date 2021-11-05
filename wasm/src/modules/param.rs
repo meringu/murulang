@@ -1,8 +1,15 @@
 use crate::expression::{Expressable, Expression};
 
 pub struct Param {
-    ty: String,
+    tys: Vec<String>,
     id: Option<String>,
+}
+
+impl Param {
+    #[doc(hidden)]
+    pub fn new(tys: Vec<String>, id: Option<String>) -> Self {
+        Param { tys: tys, id: id }
+    }
 }
 
 impl Expressable for Param {
@@ -16,40 +23,29 @@ impl Expressable for Param {
             l.push(Expression::new(atom))
         }
 
-        l.push(Expression::new(&self.ty));
+        for ty in self.tys.iter() {
+            l.push(Expression::new(ty));
+        }
 
         Expression::new(l)
     }
 }
 
-impl Param {
-    pub fn from<S: Into<String>>(ty: S) -> Self {
-        Self {
-            ty: ty.into(),
-            id: None,
-        }
-    }
+#[macro_export]
+macro_rules! param {
+    ($id: literal, $ty:ty) => {{
+        let mut tys = Vec::new();
+        tys.push(stringify!($ty).to_string());
+        Param::new(tys, Some($id.to_string()),)
+    }};
 
-    pub fn i32() -> Self {
-        Self::from("i32")
-    }
-
-    pub fn i64() -> Self {
-        Self::from("i64")
-    }
-
-    pub fn f32() -> Self {
-        Self::from("f32")
-    }
-
-    pub fn f64() -> Self {
-        Self::from("f64")
-    }
-
-    pub fn with_id<S: Into<String>>(mut self, id: S) -> Self {
-        self.id = Some(id.into());
-        self
-    }
+    ($($ty:ty),+) => {{
+        let mut tys = Vec::new();
+        $(
+            tys.push(stringify!($ty).to_string());
+        )*
+        Param::new(tys, None)
+    }};
 }
 
 #[cfg(test)]
@@ -57,30 +53,23 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn test_param_i32() {
-        assert_eq!(Param::i32().to_expression().to_string(), "(param i32)");
-    }
-
-    #[test]
-    pub fn test_param_i32_with_id() {
+    pub fn test_param_with_id() {
         assert_eq!(
-            Param::i32().with_id("foo").to_expression().to_string(),
+            param!("foo", i32).to_expression().to_string(),
             "(param $foo i32)"
-        );
+        )
     }
 
     #[test]
-    pub fn test_param_i64() {
-        assert_eq!(Param::i64().to_expression().to_string(), "(param i64)");
+    pub fn test_param_i32() {
+        assert_eq!(param!(i32).to_expression().to_string(), "(param i32)")
     }
 
     #[test]
-    pub fn test_param_f32() {
-        assert_eq!(Param::f32().to_expression().to_string(), "(param f32)");
-    }
-
-    #[test]
-    pub fn test_param_f64() {
-        assert_eq!(Param::f64().to_expression().to_string(), "(param f64)");
+    pub fn test_param_all_types() {
+        assert_eq!(
+            param!(i32, i64, f32, f64).to_expression().to_string(),
+            "(param i32 i64 f32 f64)"
+        )
     }
 }

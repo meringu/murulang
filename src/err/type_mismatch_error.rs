@@ -8,7 +8,11 @@ pub struct TypeMismatchError {
 
 impl std::fmt::Display for TypeMismatchError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "type mismatch error, expected: {}, got: {}", self.expected, self.got)
+        write!(
+            f,
+            "type mismatch error, expected: {}, got: {}",
+            self.expected, self.got
+        )
     }
 }
 

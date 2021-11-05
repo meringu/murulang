@@ -1,10 +1,12 @@
 use super::local::Local;
+use super::param::Param;
 use super::result::Result;
 use crate::expression::{Expressable, Expression};
 
 pub struct Func {
     id: Option<String>,
     locals: Vec<Local>,
+    params: Vec<Param>,
     results: Vec<Result>,
 }
 
@@ -23,6 +25,10 @@ impl Expressable for Func {
             l.push(local.to_expression());
         }
 
+        for param in self.params.iter() {
+            l.push(param.to_expression());
+        }
+
         for result in self.results.iter() {
             l.push(result.to_expression());
         }
@@ -36,6 +42,7 @@ impl Func {
         Self {
             id: None,
             locals: vec![],
+            params: vec![],
             results: vec![],
         }
     }
@@ -50,6 +57,11 @@ impl Func {
         self
     }
 
+    pub fn with_param(mut self, param: Param) -> Self {
+        self.params.push(param);
+        self
+    }
+
     pub fn with_result(mut self, result: Result) -> Self {
         self.results.push(result);
         self
@@ -59,6 +71,8 @@ impl Func {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::result;
 
     #[test]
     pub fn test_empty_func() {
@@ -89,8 +103,8 @@ mod tests {
     pub fn test_empty_func_with_results() {
         assert_eq!(
             Func::new()
-                .with_result(Result::i32())
-                .with_result(Result::f32())
+                .with_result(result!(i32))
+                .with_result(result!(f32))
                 .to_expression()
                 .to_string(),
             "(func (result i32) (result f32))"

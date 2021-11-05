@@ -6,34 +6,22 @@ pub struct Result {
 
 impl Expressable for Result {
     fn to_expression(&self) -> Expression {
-        let mut l = vec![Expression::new("result")];
-
-        l.push(Expression::new(&self.ty));
-
-        Expression::new(l)
+        Expression::new(vec![Expression::new("result"), Expression::new(&self.ty)])
     }
 }
 
 impl Result {
-    pub fn from<S: Into<String>>(ty: S) -> Self {
-        Self { ty: ty.into() }
+    #[doc(hidden)]
+    pub fn new(ty: String) -> Self {
+        Self { ty: ty }
     }
+}
 
-    pub fn i32() -> Self {
-        Self::from("i32")
-    }
-
-    pub fn i64() -> Self {
-        Self::from("i64")
-    }
-
-    pub fn f32() -> Self {
-        Self::from("f32")
-    }
-
-    pub fn f64() -> Self {
-        Self::from("f64")
-    }
+#[macro_export]
+macro_rules! result {
+    ($ty:ty) => {{
+        Result::new(stringify!($ty).to_string())
+    }};
 }
 
 #[cfg(test)]
@@ -42,21 +30,21 @@ mod tests {
 
     #[test]
     pub fn test_result_i32() {
-        assert_eq!(Result::i32().to_expression().to_string(), "(result i32)");
+        assert_eq!(result!(i32).to_expression().to_string(), "(result i32)");
     }
 
     #[test]
     pub fn test_result_i64() {
-        assert_eq!(Result::i64().to_expression().to_string(), "(result i64)");
+        assert_eq!(result!(i64).to_expression().to_string(), "(result i64)");
     }
 
     #[test]
     pub fn test_result_f32() {
-        assert_eq!(Result::f32().to_expression().to_string(), "(result f32)");
+        assert_eq!(result!(f32).to_expression().to_string(), "(result f32)");
     }
 
     #[test]
     pub fn test_result_f64() {
-        assert_eq!(Result::f64().to_expression().to_string(), "(result f64)");
+        assert_eq!(result!(f64).to_expression().to_string(), "(result f64)");
     }
 }

@@ -4,8 +4,8 @@ mod function;
 mod operator;
 mod program;
 mod util;
-mod variable_name;
 mod variable;
+mod variable_name;
 
 pub use crate::ast::function::{Function, FunctionParameter, FunctionSignature, Line};
 pub use crate::ast::operator::Operator;

@@ -26,7 +26,8 @@ impl VariableType {
             VariableType::Bool => "i32",
             VariableType::Float => "f32",
             VariableType::Int => "i32",
-        }.to_owned()
+        }
+        .to_owned()
     }
 }
 

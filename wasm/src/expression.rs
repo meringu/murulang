@@ -49,6 +49,13 @@ impl Expression {
         a.into()
     }
 
+    pub fn quote(self) -> Self {
+        match self {
+            Expression::Atom(s) => Expression::Atom(format!("\"{}\"", s)),
+            _ => panic!("can only quote atoms"),
+        }
+    }
+
     pub fn to_bin(self) -> Result<Vec<u8>, Box<dyn error::Error>> {
         Ok(wat2wasm(self.to_string())?)
     }

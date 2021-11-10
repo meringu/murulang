@@ -14,4 +14,4 @@ Murulang compiles to WebAssembly and WASI
     wasmtime ./examples/example.wasm
     ```
 
-Set the `RUST_LOG=debug` environment variable during compilation to see all the various abstract syntax trees during compilation.
+Set the `-l=debug` flag during compilation to see all the various abstract syntax trees during compilation.

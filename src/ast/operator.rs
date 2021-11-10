@@ -1,5 +1,6 @@
 use super::util::span_into_phantomdata;
 use crate::parser::Rule;
+use crate::{wasm, wasm::Expression};
 use std::marker::PhantomData;
 
 #[derive(Debug, FromPest, Copy, Clone)]
@@ -56,16 +57,15 @@ pub enum Operator {
 }
 
 impl Operator {
-    pub fn to_wat(&self) -> String {
+    pub fn to_wasm(&self) -> Expression {
         match self {
-            Operator::Add(_) => "add",
-            Operator::Subtract(_) => "sub",
-            Operator::Multiply(_) => "mul",
-            Operator::Divide(_) => "div",
-            Operator::Eq(_) => "eq",
-            Operator::Neq(_) => "ne",
+            Operator::Add(_) => wasm!("add"),
+            Operator::Subtract(_) => wasm!("sub"),
+            Operator::Multiply(_) => wasm!("mul"),
+            Operator::Divide(_) => wasm!("div"),
+            Operator::Eq(_) => wasm!("eq"),
+            Operator::Neq(_) => wasm!("ne"),
         }
-        .to_string()
     }
 }
 

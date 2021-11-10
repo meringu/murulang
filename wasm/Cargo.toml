@@ -1,9 +1,0 @@
-[package]
-name = "wasm"
-version = "0.1.0"
-authors = ["Henry Muru Paenga <meringu@gmail.com>"]
-edition = "2018"
-
-[dependencies]
-
-wabt = "0.9.1"

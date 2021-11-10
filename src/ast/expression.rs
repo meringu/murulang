@@ -4,7 +4,7 @@ use crate::ast::operator::Operator;
 use crate::ast::variable::{Variable, VariableType};
 use crate::err::{OperatorArgumentError, TypeMismatchError};
 use crate::parser::Rule;
-use crate::wat;
+use crate::wasm;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, FromPest)]
@@ -43,19 +43,15 @@ impl Unary {
         }
     }
 
-    pub fn to_wat(
+    pub fn to_wasm(
         &self,
         return_type: VariableType,
         locals_to_arg_index: &HashMap<&str, usize>,
-    ) -> String {
+    ) -> wasm::Expression {
         match self {
-            Unary::Expression(e) => {
-                return e.to_wat(return_type, locals_to_arg_index);
-            }
-            Unary::Literal(t) => {
-                return t.to_wat();
-            }
-            Unary::Call(c) => return c.to_wat(return_type, locals_to_arg_index),
+            Unary::Expression(e) => e.to_wasm(return_type, locals_to_arg_index),
+            Unary::Literal(t) => t.to_wasm(),
+            Unary::Call(c) => c.to_wasm(return_type, locals_to_arg_index),
         }
     }
 }
@@ -114,20 +110,15 @@ impl Binary {
         })
     }
 
-    pub fn to_wat(
+    pub fn to_wasm(
         &self,
         return_type: VariableType,
         locals_to_arg_index: &HashMap<&str, usize>,
-    ) -> String {
-        format!(
-            "({}.{}
-    {}
-    {}
-)",
-            return_type.to_wat(),
-            self.operator.to_wat(),
-            wat::indent(self.left.to_wat(return_type, locals_to_arg_index), 4),
-            wat::indent(self.right.to_wat(return_type, locals_to_arg_index), 4)
+    ) -> wasm::Expression {
+        wasm!(
+            format!("{}.{}", return_type.to_wasm(), self.operator.to_wasm()),
+            self.left.to_wasm(return_type, locals_to_arg_index),
+            self.right.to_wasm(return_type, locals_to_arg_index)
         )
     }
 }
@@ -185,16 +176,20 @@ impl Ternary {
         Ok(truthy_type)
     }
 
-    pub fn to_wat(
+    pub fn to_wasm(
         &self,
         return_type: VariableType,
         locals_to_arg_index: &HashMap<&str, usize>,
-    ) -> String {
-        wat::control_if(
-            Some(return_type.to_wat()),
-            self.condition.to_wat(return_type, locals_to_arg_index),
-            self.truthy.to_wat(return_type, locals_to_arg_index),
-            Some(self.falsy.to_wat(return_type, locals_to_arg_index)),
+    ) -> wasm::Expression {
+        wasm!(
+            "if",
+            wasm!("result", return_type.to_wasm()),
+            self.condition.to_wasm(return_type, locals_to_arg_index),
+            wasm!(
+                "then",
+                self.truthy.to_wasm(return_type, locals_to_arg_index)
+            ),
+            wasm!("else", self.falsy.to_wasm(return_type, locals_to_arg_index))
         )
     }
 }
@@ -241,20 +236,20 @@ impl Expression {
         }
     }
 
-    pub fn to_wat(
+    pub fn to_wasm(
         &self,
         return_type: VariableType,
         locals_to_arg_index: &HashMap<&str, usize>,
-    ) -> String {
+    ) -> wasm::Expression {
         match self {
             Expression::Unary(u) => {
-                return u.to_wat(return_type, locals_to_arg_index);
+                return u.to_wasm(return_type, locals_to_arg_index);
             }
             Expression::Binary(b) => {
-                return b.to_wat(return_type, locals_to_arg_index);
+                return b.to_wasm(return_type, locals_to_arg_index);
             }
             Expression::Ternary(t) => {
-                return t.to_wat(return_type, locals_to_arg_index);
+                return t.to_wasm(return_type, locals_to_arg_index);
             }
         }
     }

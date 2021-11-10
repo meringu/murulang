@@ -5,15 +5,16 @@ extern crate from_pest;
 extern crate pest_ast;
 extern crate pest;
 
-extern crate wabt;
+// extern crate wabt;
 
-extern crate wat;
+// extern crate wat;
 
 mod ast;
 mod command;
 mod err;
 mod parser;
 mod stdlib;
+mod wasm;
 
 use crate::command::SubCommand;
 use clap::{AppSettings, Clap};

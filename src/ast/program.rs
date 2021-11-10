@@ -1,9 +1,8 @@
 use crate::ast::{Function, FunctionSignature, Line};
 use crate::err;
 use crate::parser::Rule;
-use crate::wat;
+use crate::{wasm, wasm::Expression, wasm_dollar, wasm_quote};
 use std::collections::{HashMap, HashSet};
-use wasm::{wasm, wasm_dollar, wasm_quote, Expression};
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::program))]
@@ -20,8 +19,8 @@ impl Program {
     pub fn to_wasm(
         &self,
         included_sigs: HashMap<&str, FunctionSignature>,
-        included_fns: Vec<wasm::SExpression>,
-    ) -> Result<wasm::SExpression, Box<dyn std::error::Error>> {
+        included_fns: Vec<Expression>,
+    ) -> Result<wasm::Expression, Box<dyn std::error::Error>> {
         let mut functions = HashMap::<&str, Vec<&Function>>::new();
         let mut function_signatures = HashMap::<&str, FunctionSignature>::new();
         let mut validated = HashSet::<&str>::new();
@@ -76,6 +75,7 @@ impl Program {
         }
 
         let mut module_inner = vec![
+            wasm!("module"),
             wasm!(
                 "import",
                 wasm_quote!("wasi_unstable"),
@@ -86,10 +86,9 @@ impl Program {
                     wasm!("param", "i32", "i32", "i32", "i32"),
                     wasm!("result", "i32")
                 )
-            )
-            .to_pretty(4),
-            wasm!("export", wasm_quote!("memory"), wasm!("memory", 0)).to_pretty(4),
-            wasm!("memory", 1).to_pretty(4),
+            ),
+            wasm!("export", wasm_quote!("memory"), wasm!("memory", 0)),
+            wasm!("memory", 1),
             wasm!(
                 "func",
                 wasm_dollar!("_start"),
@@ -100,12 +99,11 @@ impl Program {
                     wasm!("call", wasm_dollar!("main"))
                 ),
                 wasm!("call", wasm_dollar!("printc"), wasm!("i32.const", 10))
-            )
-            .to_pretty(4),
+            ),
         ];
 
         for included_fn in included_fns {
-            module_inner.push(included_fn.to_string());
+            module_inner.push(included_fn);
         }
 
         for (fname, sig) in &function_signatures {
@@ -129,25 +127,31 @@ impl Program {
                 }));
             }
 
-            let mut inner = fns.pop().unwrap().1.to_wat(sig.return_type);
+            let mut inner = fns.pop().unwrap().1.to_wasm(sig.return_type);
             while let Some((cond, f)) = fns.pop() {
-                inner = wat::control_if(
-                    Some(sig.return_type.to_wat()),
+                inner = wasm!(
+                    "if",
+                    wasm!("result", sig.return_type.to_wasm()),
                     cond.unwrap(),
-                    f.to_wat(sig.return_type),
-                    Some(inner),
+                    wasm!("then", f.to_wasm(sig.return_type)),
+                    wasm!("else", inner)
                 );
             }
 
-            module_inner.push(wat::function(
-                fname,
-                None,
-                Some(sig.arg_types.iter().map(|t| t.to_wat()).collect()),
-                Some(sig.return_type.to_wat()),
-                vec![inner],
+            let mut param = vec![wasm!("param")];
+            for ty in sig.arg_types.iter() {
+                param.push(wasm!(ty.to_wasm()));
+            }
+
+            module_inner.push(wasm!(
+                wasm!("func"),
+                wasm_dollar!(fname),
+                wasm!(param),
+                wasm!("result", sig.return_type.to_wasm()),
+                inner
             ));
         }
 
-        Ok(wasm::SExpression::Atom(wat::module(module_inner)))
+        Ok(wasm!(module_inner))
     }
 }

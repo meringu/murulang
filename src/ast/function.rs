@@ -3,6 +3,7 @@ use crate::ast::variable::{Variable, VariableType};
 use crate::ast::variable_name::VariableName;
 use crate::err::{ArgumentError, TypeMismatchError, UntypedFunctionError};
 use crate::parser::Rule;
+use crate::wasm;
 use pest::Span;
 use std::collections::{HashMap, HashSet};
 
@@ -154,7 +155,7 @@ impl Function {
         })
     }
 
-    pub fn to_wat(&self, return_type: VariableType) -> String {
+    pub fn to_wasm(&self, return_type: VariableType) -> wasm::Expression {
         let mut locals_to_arg_index = HashMap::<&str, usize>::new();
         for i in 0..self.parameters.len() {
             match &self.parameters[i] {
@@ -165,7 +166,7 @@ impl Function {
             };
         }
 
-        format!("{}", self.expr.to_wat(return_type, &locals_to_arg_index))
+        self.expr.to_wasm(return_type, &locals_to_arg_index)
     }
 
     pub fn wat_matches_condition(&self) -> Option<String> {
@@ -180,9 +181,9 @@ impl Function {
     (get_local {})
     ({}.const {})
 )"#,
-                        l.get_type().to_wat(),
+                        l.get_type().to_wasm(),
                         i,
-                        l.get_type().to_wat(),
+                        l.get_type().to_wasm(),
                         l,
                     ));
                 }

@@ -347,8 +347,6 @@ dependencies = [
  "pest-ast",
  "pest_derive",
  "wabt",
- "wasm",
- "wat",
 ]
 
 [[package]]
@@ -700,17 +698,6 @@ dependencies = [
  "cmake",
  "glob",
 ]
-
-[[package]]
-name = "wasm"
-version = "0.1.0"
-dependencies = [
- "wabt",
-]
-
-[[package]]
-name = "wat"
-version = "0.1.0"
 
 [[package]]
 name = "winapi"

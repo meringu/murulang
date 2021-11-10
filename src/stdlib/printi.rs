@@ -1,57 +1,53 @@
-use crate::ast;
+use crate::ast::{FunctionSignature, VariableType};
+use crate::{wasm, wasm::Expression, wasm_dollar};
 
-use wasm::{wasm, wasm_dollar, Expression};
-
-pub fn signature() -> (&'static str, ast::FunctionSignature) {
+pub fn signature() -> (&'static str, FunctionSignature) {
     (
         "printi",
-        ast::FunctionSignature {
+        FunctionSignature {
             arg_types: vec![],
-            return_type: ast::VariableType::Int,
+            return_type: VariableType::Int,
         },
     )
 }
 
-pub fn func() -> wasm::SExpression {
-    wasm::SExpression::Atom(
+pub fn func() -> Expression {
+    wasm!(
+        "func",
+        wasm_dollar!("printi"),
+        wasm!("param", wasm_dollar!("num"), "i32"),
         wasm!(
-            "func",
-            wasm_dollar!("printi"),
-            wasm!("param", wasm_dollar!("num"), "i32"),
+            "if",
             wasm!(
-                "if",
+                "i32.ne",
+                wasm!("i32.const", 0),
+                wasm!("local.get", wasm_dollar!("num"))
+            ),
+            wasm!(
+                "then",
                 wasm!(
-                    "i32.ne",
-                    wasm!("i32.const", 0),
-                    wasm!("local.get", wasm_dollar!("num"))
+                    "call",
+                    wasm_dollar!("printi"),
+                    wasm!(
+                        "i32.div_u",
+                        wasm!("local.get", wasm_dollar!("num")),
+                        wasm!("i32.const", 10)
+                    )
                 ),
                 wasm!(
-                    "then",
+                    "call",
+                    wasm_dollar!("printc"),
                     wasm!(
-                        "call",
-                        wasm_dollar!("printi"),
+                        "i32.add",
+                        wasm!("i32.const", 48),
                         wasm!(
-                            "i32.div_u",
+                            "i32.rem_u",
                             wasm!("local.get", wasm_dollar!("num")),
                             wasm!("i32.const", 10)
-                        )
-                    ),
-                    wasm!(
-                        "call",
-                        wasm_dollar!("printc"),
-                        wasm!(
-                            "i32.add",
-                            wasm!("i32.const", 48),
-                            wasm!(
-                                "i32.rem_u",
-                                wasm!("local.get", wasm_dollar!("num")),
-                                wasm!("i32.const", 10)
-                            )
                         )
                     )
                 )
             )
         )
-        .to_pretty(4),
     )
 }

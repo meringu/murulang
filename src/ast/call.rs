@@ -4,7 +4,7 @@ use crate::ast::variable::{Variable, VariableType};
 use crate::ast::variable_name::VariableName;
 use crate::err::TypeMismatchError;
 use crate::parser::Rule;
-use crate::wat;
+use crate::{wasm, wasm_dollar};
 use std::collections::HashMap;
 
 #[derive(Debug, FromPest)]
@@ -47,19 +47,19 @@ impl Argument {
         }
     }
 
-    pub fn to_wat(
+    pub fn to_wasm(
         &self,
         return_type: VariableType,
         locals_to_arg_index: &HashMap<&str, usize>,
-    ) -> String {
+    ) -> wasm::Expression {
         match self {
-            Argument::Expression(e) => e.to_wat(return_type, locals_to_arg_index),
-            Argument::Literal(t) => t.to_wat(),
+            Argument::Expression(e) => e.to_wasm(return_type, locals_to_arg_index),
+            Argument::Literal(t) => t.to_wasm(),
             Argument::VariableName(c) => Call {
                 variable: VariableName { name: c.name },
                 args: vec![],
             }
-            .to_wat(return_type, locals_to_arg_index),
+            .to_wasm(return_type, locals_to_arg_index),
         }
     }
 }
@@ -133,20 +133,20 @@ impl Call {
         }
     }
 
-    pub fn to_wat(
+    pub fn to_wasm(
         &self,
         return_type: VariableType,
         locals_to_arg_index: &HashMap<&str, usize>,
-    ) -> String {
+    ) -> wasm::Expression {
         match locals_to_arg_index.get(self.variable.name) {
-            Some(i) => format!("(get_local {})", i).to_owned(),
-            None => wat::call(
-                self.variable.name,
-                self.args
-                    .iter()
-                    .map(|arg| arg.to_wat(return_type, locals_to_arg_index))
-                    .collect(),
-            ),
+            Some(i) => wasm!("local.get", i),
+            None => {
+                let mut call = vec![wasm!("call"), wasm_dollar!(self.variable.name)];
+                for arg in self.args.iter() {
+                    call.push(arg.to_wasm(return_type, locals_to_arg_index));
+                }
+                wasm!(call)
+            }
         }
     }
 }

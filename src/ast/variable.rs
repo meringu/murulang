@@ -1,6 +1,6 @@
 use crate::ast::util::span_into_str;
 use crate::parser::Rule;
-
+use crate::{wasm, wasm::Expression};
 use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -21,13 +21,12 @@ impl fmt::Display for VariableType {
 }
 
 impl VariableType {
-    pub fn to_wat(&self) -> String {
+    pub fn to_wasm(&self) -> Expression {
         match self {
-            VariableType::Bool => "i32",
-            VariableType::Float => "f32",
-            VariableType::Int => "i32",
+            VariableType::Bool => wasm!("i32"),
+            VariableType::Float => wasm!("f32"),
+            VariableType::Int => wasm!("i32"),
         }
-        .to_owned()
     }
 }
 
@@ -69,11 +68,11 @@ impl Variable {
         }
     }
 
-    pub fn to_wat(&self) -> String {
+    pub fn to_wasm(&self) -> Expression {
         match self {
-            Variable::Int(l) => format!("(i32.const {})", l.val),
-            Variable::Float(l) => format!("(f32.const {})", l.val),
-            Variable::Bool(l) => format!("(i32.const {})", l.val as i32),
+            Variable::Int(l) => wasm!("i32.const", l.val),
+            Variable::Float(l) => wasm!("f32.const", l.val),
+            Variable::Bool(l) => wasm!("i32.const", l.val as i32),
         }
     }
 }

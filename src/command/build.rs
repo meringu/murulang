@@ -68,9 +68,9 @@ impl Build {
         let wasm = program.to_wasm(stdlib::signatures(), stdlib::funcs())?;
 
         if log::Level::Debug <= level_filter {
-            println!("wat:\n{}", wasm);
+            println!("wat:\n{}", wasm.to_pretty(4));
         }
-        let bin = wasm.bin()?;
+        let bin = wasm.to_bin()?;
 
         let mut file = std::fs::File::create(std::path::Path::new(output))?;
         file.write_all(&bin)?;

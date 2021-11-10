@@ -4,7 +4,8 @@ use from_pest::FromPest;
 use log::LevelFilter;
 use pest::Parser;
 use std::error;
-use std::io::Write;
+use wasmtime::{Engine, Linker, Module, Store};
+use wasmtime_wasi::sync::WasiCtxBuilder;
 
 use crate::ast;
 use crate::err;
@@ -13,20 +14,16 @@ use crate::stdlib;
 
 // Build a muru program
 #[derive(Clap, Debug)]
-pub struct Build {
+pub struct Run {
     // Path to the muru file to build
     source: String,
-
-    // Output file name
-    #[clap(short)]
-    output: Option<String>,
 
     // Log level
     #[clap(short)]
     log_level: Option<LevelFilter>,
 }
 
-impl Build {
+impl Run {
     pub fn execute(&self) -> Result<(), Box<dyn error::Error>> {
         let level_filter = match self.log_level {
             Some(l) => l,
@@ -41,23 +38,6 @@ impl Build {
                 }));
             }
         };
-
-        let output: String = match &self.output {
-            Some(o) => o.to_string(),
-            None => format!("{}.wasm", &source[..source.len() - ".muru".len()]),
-        };
-
-        let wast = format!(
-            "{}.wast",
-            match output.strip_suffix(".wasm") {
-                Some(s) => s,
-                None => {
-                    return Err(Box::new(err::StandardError {
-                        s: "output not a .wasm file",
-                    }));
-                }
-            }
-        );
 
         let source_content = String::from_utf8(std::fs::read(source)?)?;
 
@@ -83,23 +63,22 @@ impl Build {
             println!("wast:\n{}", wasm.to_pretty(4));
         }
 
-        let pretty = wasm.to_pretty(4);
-        let mut file = std::fs::File::create(std::path::Path::new(&wast))?;
-        file.write_all(&pretty.as_bytes())?;
-
         let bin = wasm.to_bin()?;
 
-        file = std::fs::File::create(std::path::Path::new(&output))?;
-        file.write_all(&bin)?;
-
-        if log::Level::Info <= level_filter {
-            println!(
-                "{} compiled to: {} ({} bytes)",
-                self.source,
-                output,
-                bin.len()
-            );
-        }
+        let engine = Engine::default();
+        let mut linker = Linker::new(&engine);
+        wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
+        let wasi = WasiCtxBuilder::new()
+            .inherit_stdio()
+            .inherit_args()?
+            .build();
+        let mut store = Store::new(&engine, wasi);
+        let module = Module::from_binary(&engine, &bin)?;
+        linker.module(&mut store, "", &module)?;
+        linker
+            .get_default(&mut store, "")?
+            .typed::<(), (), _>(&store)?
+            .call(&mut store, ())?;
 
         Ok(())
     }

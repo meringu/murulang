@@ -42,10 +42,22 @@ impl Build {
             }
         };
 
-        let output = match &self.output {
-            Some(o) => o,
-            None => &source[..source.len() - ".muru".len()],
+        let output: String = match &self.output {
+            Some(o) => o.to_string(),
+            None => format!("{}.wasm", &source[..source.len() - ".muru".len()]),
         };
+
+        let wast = format!(
+            "{}.wast",
+            match output.strip_suffix(".wasm") {
+                Some(s) => s,
+                None => {
+                    return Err(Box::new(err::StandardError {
+                        s: "output not a .wasm file",
+                    }));
+                }
+            }
+        );
 
         let source_content = String::from_utf8(std::fs::read(source)?)?;
 
@@ -70,9 +82,14 @@ impl Build {
         if log::Level::Debug <= level_filter {
             println!("wat:\n{}", wasm.to_pretty(4));
         }
+
+        let pretty = wasm.to_pretty(4);
+        let mut file = std::fs::File::create(std::path::Path::new(&wast))?;
+        file.write_all(&pretty.as_bytes())?;
+
         let bin = wasm.to_bin()?;
 
-        let mut file = std::fs::File::create(std::path::Path::new(output))?;
+        file = std::fs::File::create(std::path::Path::new(&output))?;
         file.write_all(&bin)?;
 
         if log::Level::Info <= level_filter {

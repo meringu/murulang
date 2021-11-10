@@ -1,12 +1,12 @@
 use super::func::Func;
 use crate::expression::{Expressable, Expression};
 
-pub struct Module {
+pub struct Module<'a> {
     id: Option<String>,
-    funcs: Vec<Func>,
+    funcs: Vec<Func<'a>>,
 }
 
-impl Expressable for Module {
+impl Expressable for Module<'_> {
     fn to_expression(&self) -> Expression {
         let mut l = vec![Expression::new("module")];
 
@@ -25,48 +25,53 @@ impl Expressable for Module {
     }
 }
 
-impl Module {
-    pub fn new() -> Self {
+impl<'a> Module<'a> {
+    #[doc(hidden)]
+    pub fn new(id: Option<String>) -> Self {
         Self {
-            id: None,
+            id: id,
             funcs: vec![],
         }
     }
 
-    pub fn with_id<S: Into<String>>(mut self, id: S) -> Self {
-        self.id = Some(id.into());
-        self
-    }
-
-    pub fn with_func(mut self, func: Func) -> Self {
+    pub fn with_func(mut self, func: Func<'a>) -> Self {
         self.funcs.push(func);
         self
     }
+}
+
+#[macro_export]
+macro_rules! module {
+    ($id: literal) => {
+        $crate::Module::new(Some($id.to_string()))
+    };
+
+    () => {{
+        $crate::Module::new(None)
+    }};
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    use crate::func;
+
     #[test]
     pub fn test_empty_module() {
-        assert_eq!(Module::new().to_expression().to_string(), "(module)");
+        assert_eq!(module!().to_expression().to_string(), "(module)");
     }
 
     #[test]
     pub fn test_empty_module_with_id() {
-        assert_eq!(
-            Module::new().with_id("foo").to_expression().to_string(),
-            "(module $foo)"
-        );
+        assert_eq!(module!("foo").to_expression().to_string(), "(module $foo)");
     }
 
     #[test]
     pub fn test_example_module() {
         assert_eq!(
-            Module::new()
-                .with_id("foo")
-                .with_func(Func::new().with_id("bar"))
+            module!("foo")
+                .with_func(func!("bar"))
                 .to_expression()
                 .to_string(),
             "(module $foo (func $bar))"

@@ -35,6 +35,12 @@ impl From<&String> for Expression {
     }
 }
 
+impl From<i32> for Expression {
+    fn from(l: i32) -> Expression {
+        Expression::Atom(l.to_string())
+    }
+}
+
 impl From<Vec<Expression>> for Expression {
     fn from(l: Vec<Expression>) -> Expression {
         Expression::List(l)
@@ -115,6 +121,36 @@ impl Expression {
             }
         )
     }
+}
+
+#[macro_export]
+macro_rules! wasm {
+    ($instruction:literal) => {
+        Expression::new($instruction)
+    };
+
+    ($instruction:literal, $($rest:expr),+) => {
+        Expression::new(vec![
+            Expression::new($instruction),
+            $(
+                Expression::new($rest),
+            )*
+        ])
+    };
+}
+
+#[macro_export]
+macro_rules! wasm_quote {
+    ($str:literal) => {
+        concat!("\"", $str, "\"")
+    };
+}
+
+#[macro_export]
+macro_rules! wasm_dollar {
+    ($str:literal) => {
+        concat!("$", $str)
+    };
 }
 
 #[cfg(test)]
@@ -236,6 +272,41 @@ mod tests {
                 .to_bin()
                 .unwrap(),
             vec!(0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00) // \0asm magic and version 1
+        )
+    }
+
+    #[test]
+    fn test_macro_atom() {
+        assert_eq!(wasm!("foo").to_string(), "foo")
+    }
+
+    #[test]
+    fn test_macro_simple() {
+        assert_eq!(
+            wasm!("foo", wasm!("bar", "baz")).to_string(),
+            "(foo (bar baz))"
+        )
+    }
+
+    #[test]
+    fn test_macro_module() {
+        assert_eq!(
+            wasm!(
+                "module",
+                wasm!(
+                    "func",
+                    "$add",
+                    wasm!("param", wasm_dollar!("lhs"), "i32"),
+                    wasm!("param", wasm_dollar!("rhs"), "i32"),
+                    wasm!("result", "i32"),
+                    wasm!("local.get", wasm_dollar!("lhs")),
+                    wasm!("local.get", wasm_dollar!("rhs")),
+                    wasm!("i32.add")
+                ),
+                wasm!("export", wasm_quote!("add"), wasm!("func", "$add"))
+            )
+            .to_string(),
+            "(module (func $add (param $lhs i32) (param $rhs i32) (result i32) (local.get $lhs) (local.get $rhs) i32.add) (export \"add\" (func $add)))"
         )
     }
 }

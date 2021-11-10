@@ -124,28 +124,28 @@ pub fn drop() -> SExpression {
     SExpression::Atom("drop".to_string())
 }
 
-pub fn export(name: &str, inner: Option<SExpression>) -> SExpression {
-    let mut l = vec![
-        SExpression::Atom("export".to_string()),
-        SExpression::Atom(format!("\"{}\"", name)),
-    ];
+// pub fn export(name: &str, inner: Option<SExpression>) -> SExpression {
+//     let mut l = vec![
+//         SExpression::Atom("export".to_string()),
+//         SExpression::Atom(format!("\"{}\"", name)),
+//     ];
 
-    if let Some(i) = inner {
-        l.push(i);
-    }
+//     if let Some(i) = inner {
+//         l.push(i);
+//     }
 
-    SExpression::List(l)
-}
+//     SExpression::List(l)
+// }
 
 pub fn func(
     name: &str,
-    export: Option<SExpression>,
+    export: Option<String>,
     params: Option<SExpression>,
     result: Option<SExpression>,
     body: Vec<SExpression>,
 ) -> SExpression {
     let e = match export {
-        Some(s) => format!(" {}", s),
+        Some(s) => format!(" (export \"{}\")", s),
         _ => "".to_string(),
     };
 
@@ -185,12 +185,12 @@ pub fn import(
     ])
 }
 
-pub fn memory(i: i32) -> SExpression {
-    SExpression::List(vec![
-        SExpression::Atom("memory".to_string()),
-        SExpression::Atom(i.to_string()),
-    ])
-}
+// pub fn memory(i: i32) -> SExpression {
+//     SExpression::List(vec![
+//         SExpression::Atom("memory".to_string()),
+//         SExpression::Atom(i.to_string()),
+//     ])
+// }
 
 pub fn module(inner: Vec<SExpression>) -> SExpression {
     let mut inn = vec![SExpression::Atom("module".to_string())];
@@ -223,10 +223,10 @@ pub fn result(t: Types) -> SExpression {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_memory() {
-        assert_eq!(memory(1).to_string(), "(memory 1)",);
-    }
+    // #[test]
+    // fn test_memory() {
+    //     assert_eq!(memory!(1).to_string(), "(memory 1)",);
+    // }
 
     #[test]
     fn test_module() {

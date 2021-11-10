@@ -1,5 +1,7 @@
 use crate::ast;
 
+use wasm::{wasm, wasm_dollar, Expression};
+
 pub fn signature() -> (&'static str, ast::FunctionSignature) {
     (
         "printc",
@@ -11,31 +13,28 @@ pub fn signature() -> (&'static str, ast::FunctionSignature) {
 }
 
 pub fn func() -> wasm::SExpression {
-    wasm::func(
-        "printc",
-        None,
-        Some(wasm::param(vec![wasm::Types::I32])),
-        None,
-        vec![
-            wasm::Types::I32.store(
-                wasm::Types::I32.constant("0"),
-                wasm::Types::I32.constant("8"),
+    wasm::SExpression::Atom(
+        wasm!(
+            "func",
+            wasm_dollar!("printc"),
+            wasm!("param", wasm_dollar!("char"), "i32"),
+            wasm!("i32.store", wasm!("i32.const", 0), wasm!("i32.const", 8)),
+            wasm!("i32.store", wasm!("i32.const", 4), wasm!("i32.const", 2)),
+            wasm!(
+                "i32.store",
+                wasm!("i32.const", 8),
+                wasm!("local.get", wasm_dollar!("char"))
             ),
-            wasm::Types::I32.store(
-                wasm::Types::I32.constant("4"),
-                wasm::Types::I32.constant("2"),
+            wasm!(
+                "call",
+                wasm_dollar!("fd_write"),
+                wasm!("i32.const", 1),
+                wasm!("i32.const", 0),
+                wasm!("i32.const", 1),
+                wasm!("i32.const", 20)
             ),
-            wasm::Types::I32.store(wasm::Types::I32.constant("8"), wasm::get_local("0")),
-            wasm::call(
-                "fd_write",
-                vec![
-                    wasm::Types::I32.constant("1"),
-                    wasm::Types::I32.constant("0"),
-                    wasm::Types::I32.constant("1"),
-                    wasm::Types::I32.constant("20"),
-                ],
-            ),
-            wasm::drop(),
-        ],
+            wasm!("drop")
+        )
+        .to_pretty(4),
     )
 }

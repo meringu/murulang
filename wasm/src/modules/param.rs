@@ -36,7 +36,7 @@ macro_rules! param {
     ($id: literal, $ty:ty) => {{
         let mut tys = Vec::new();
         tys.push(stringify!($ty).to_string());
-        Param::new(tys, Some($id.to_string()),)
+        $crate::Param::new(tys, Some($id.to_string()))
     }};
 
     ($($ty:ty),+) => {{
@@ -44,7 +44,7 @@ macro_rules! param {
         $(
             tys.push(stringify!($ty).to_string());
         )*
-        Param::new(tys, None)
+        $crate::Param::new(tys, None)
     }};
 }
 

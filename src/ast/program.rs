@@ -3,6 +3,7 @@ use crate::err;
 use crate::parser::Rule;
 use crate::wat;
 use std::collections::{HashMap, HashSet};
+use wasm::{wasm, wasm_dollar, wasm_quote, Expression};
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::program))]
@@ -75,32 +76,32 @@ impl Program {
         }
 
         let mut module_inner = vec![
-            wasm::import(
-                "wasi_unstable",
-                "fd_write",
-                "fd_write",
-                Some(wasm::param(vec![
-                    wasm::Types::I32,
-                    wasm::Types::I32,
-                    wasm::Types::I32,
-                    wasm::Types::I32,
-                ])),
-                Some(wasm::result(wasm::Types::I32)),
+            wasm!(
+                "import",
+                wasm_quote!("wasi_unstable"),
+                wasm_quote!("fd_write"),
+                wasm!(
+                    "func",
+                    wasm_dollar!("fd_write"),
+                    wasm!("param", "i32", "i32", "i32", "i32"),
+                    wasm!("result", "i32")
+                )
             )
-            .to_string(),
-            wasm::export("memory", Some(wasm::memory(0))).to_string(),
-            wasm::memory(1).to_string(),
-            wasm::func(
-                "_start",
-                Some(wasm::export("_start", None)),
-                None,
-                None,
-                vec![
-                    wasm::call("printi", vec![wasm::call("main", vec![])]), // call and print output of main
-                    wasm::call("printc", vec![wasm::Types::I32.constant("10")]), // print new line
-                ],
+            .to_pretty(4),
+            wasm!("export", wasm_quote!("memory"), wasm!("memory", 0)).to_pretty(4),
+            wasm!("memory", 1).to_pretty(4),
+            wasm!(
+                "func",
+                wasm_dollar!("_start"),
+                wasm!("export", wasm_quote!("_start")),
+                wasm!(
+                    "call",
+                    wasm_dollar!("printi"),
+                    wasm!("call", wasm_dollar!("main"))
+                ),
+                wasm!("call", wasm_dollar!("printc"), wasm!("i32.const", 10))
             )
-            .to_string(),
+            .to_pretty(4),
         ];
 
         for included_fn in included_fns {

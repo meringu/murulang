@@ -1,8 +1,15 @@
 use crate::expression::{Expressable, Expression};
 
 pub struct Local {
-    ty: String,
+    tys: Vec<String>,
     id: Option<String>,
+}
+
+impl Local {
+    #[doc(hidden)]
+    pub fn new(tys: Vec<String>, id: Option<String>) -> Self {
+        Local { tys: tys, id: id }
+    }
 }
 
 impl Expressable for Local {
@@ -16,40 +23,29 @@ impl Expressable for Local {
             l.push(Expression::new(atom))
         }
 
-        l.push(Expression::new(&self.ty));
+        for ty in self.tys.iter() {
+            l.push(Expression::new(ty));
+        }
 
         Expression::new(l)
     }
 }
 
-impl Local {
-    pub fn from<S: Into<String>>(ty: S) -> Self {
-        Self {
-            ty: ty.into(),
-            id: None,
-        }
-    }
+#[macro_export]
+macro_rules! local {
+    ($id: literal, $ty:ty) => {{
+        let mut tys = Vec::new();
+        tys.push(stringify!($ty).to_string());
+        $crate::Local::new(tys, Some($id.to_string()),)
+    }};
 
-    pub fn i32() -> Self {
-        Self::from("i32")
-    }
-
-    pub fn i64() -> Self {
-        Self::from("i32")
-    }
-
-    pub fn f32() -> Self {
-        Self::from("i32")
-    }
-
-    pub fn f64() -> Self {
-        Self::from("i32")
-    }
-
-    pub fn with_id<S: Into<String>>(mut self, id: S) -> Self {
-        self.id = Some(id.into());
-        self
-    }
+    ($($ty:ty),+) => {{
+        let mut tys = Vec::new();
+        $(
+            tys.push(stringify!($ty).to_string());
+        )*
+        $crate::Local::new(tys, None)
+    }};
 }
 
 #[cfg(test)]
@@ -57,15 +53,23 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn test_local_i32() {
-        assert_eq!(Local::i32().to_expression().to_string(), "(local i32)");
+    pub fn test_local_with_id() {
+        assert_eq!(
+            local!("foo", i32).to_expression().to_string(),
+            "(local $foo i32)"
+        )
     }
 
     #[test]
-    pub fn test_local_i32_with_id() {
+    pub fn test_local_i32() {
+        assert_eq!(local!(i32).to_expression().to_string(), "(local i32)")
+    }
+
+    #[test]
+    pub fn test_local_all_types() {
         assert_eq!(
-            Local::i32().with_id("foo").to_expression().to_string(),
-            "(local $foo i32)"
-        );
+            local!(i32, i64, f32, f64).to_expression().to_string(),
+            "(local i32 i64 f32 f64)"
+        )
     }
 }

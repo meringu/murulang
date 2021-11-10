@@ -20,7 +20,7 @@ impl Result {
 #[macro_export]
 macro_rules! result {
     ($ty:ty) => {{
-        Result::new(stringify!($ty).to_string())
+        $crate::Result::new(stringify!($ty).to_string())
     }};
 }
 

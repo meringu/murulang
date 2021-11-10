@@ -74,8 +74,8 @@ impl Program {
             }
         }
 
-        let mut module_inner = vec![
-            wasm!("module"),
+        let mut module_inner = wasm!(
+            "module",
             wasm!(
                 "import",
                 wasm_quote!("wasi_unstable"),
@@ -99,11 +99,11 @@ impl Program {
                     wasm!("call", wasm_dollar!("main"))
                 ),
                 wasm!("call", wasm_dollar!("printc"), wasm!("i32.const", 10))
-            ),
-        ];
+            )
+        );
 
         for included_fn in included_fns {
-            module_inner.push(included_fn);
+            module_inner = module_inner.extend(included_fn);
         }
 
         for (fname, sig) in &function_signatures {
@@ -138,20 +138,23 @@ impl Program {
                 );
             }
 
-            let mut param = vec![wasm!("param")];
-            for ty in sig.arg_types.iter() {
-                param.push(wasm!(ty.to_wasm()));
+            let mut func = wasm!(wasm!("func"), wasm_dollar!(fname));
+
+            if sig.arg_types.len() > 0 {
+                let mut param = wasm!("param");
+                for ty in sig.arg_types.iter() {
+                    param = param.extend(ty.to_wasm());
+                }
+                func = func.extend(param);
             }
 
-            module_inner.push(wasm!(
-                wasm!("func"),
-                wasm_dollar!(fname),
-                wasm!(param),
-                wasm!("result", sig.return_type.to_wasm()),
-                inner
-            ));
+            func = func
+                .extend(wasm!("result", sig.return_type.to_wasm()))
+                .extend(inner);
+
+            module_inner = module_inner.extend(func);
         }
 
-        Ok(wasm!(module_inner))
+        Ok(module_inner)
     }
 }

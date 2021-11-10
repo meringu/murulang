@@ -1,5 +1,5 @@
 [package]
-name = "murulang"
+name = "muru"
 version = "0.1.0"
 authors = ["Henry Muru Paenga <meringu@gmail.com>"]
 edition = "2018"

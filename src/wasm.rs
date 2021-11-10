@@ -2,10 +2,6 @@ use core::fmt;
 use std::error;
 use wabt::wat2wasm;
 
-pub trait Expressable {
-    fn to_expression(&self) -> Expression;
-}
-
 pub enum Expression {
     Atom(String),
     List(Vec<Expression>),
@@ -83,6 +79,16 @@ impl Expression {
         A: Into<Expression>,
     {
         a.into()
+    }
+
+    pub fn extend(self, other: Self) -> Self {
+        match self {
+            Self::Atom(a) => Self::List(vec![Self::Atom(a), other]),
+            Self::List(mut l) => {
+                l.push(other);
+                Self::List(l)
+            }
+        }
     }
 
     pub fn to_bin(self) -> Result<Vec<u8>, Box<dyn error::Error>> {

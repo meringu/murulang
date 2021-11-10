@@ -6,7 +6,7 @@ Murulang compiles to WebAssembly and WASI
 
 ## Usage
 
-1. Install rust and wasmtime.
+1. Install rust and your favourite WebAssembly runtime (e.g. wasmtime).
 1. Run the example with:
 
     ```sh

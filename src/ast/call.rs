@@ -9,20 +9,20 @@ use std::collections::HashMap;
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::argument))]
-pub enum Argument {
-    Expression(Expression),
+pub enum Argument<'a> {
+    Expression(Expression<'a>),
     Literal(Variable),
-    VariableName(VariableName),
+    VariableName(VariableName<'a>),
 }
 
-impl Argument {
+impl<'a> Argument<'a> {
     pub fn validate(
         &self,
-        current_function: &str,
-        globals: &std::collections::HashMap<&str, Vec<&Function>>,
-        signatures: &mut std::collections::HashMap<&str, FunctionSignature>,
-        validated: &mut std::collections::HashSet<&str>,
-        local_types: &std::collections::HashMap<&str, VariableType>,
+        current_function: &'a str,
+        globals: &std::collections::HashMap<&'a str, Vec<&Function<'a>>>,
+        signatures: &mut std::collections::HashMap<&'a str, FunctionSignature>,
+        validated: &mut std::collections::HashSet<&'a str>,
+        local_types: &std::collections::HashMap<&'a str, VariableType>,
     ) -> Result<VariableType, Box<dyn std::error::Error>> {
         match self {
             Argument::Expression(e) => e.validate(
@@ -66,19 +66,19 @@ impl Argument {
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::call))]
-pub struct Call {
-    pub variable: VariableName,
-    pub args: Vec<Argument>,
+pub struct Call<'a> {
+    pub variable: VariableName<'a>,
+    pub args: Vec<Argument<'a>>,
 }
 
-impl Call {
+impl<'a> Call<'a> {
     pub fn validate(
         &self,
-        current_function: &str,
-        globals: &std::collections::HashMap<&str, Vec<&Function>>,
-        signatures: &mut std::collections::HashMap<&str, FunctionSignature>,
-        validated: &mut std::collections::HashSet<&str>,
-        local_types: &std::collections::HashMap<&str, VariableType>,
+        current_function: &'a str,
+        globals: &std::collections::HashMap<&'a str, Vec<&Function<'a>>>,
+        signatures: &mut std::collections::HashMap<&'a str, FunctionSignature>,
+        validated: &mut std::collections::HashSet<&'a str>,
+        local_types: &std::collections::HashMap<&'a str, VariableType>,
     ) -> Result<VariableType, Box<dyn std::error::Error>> {
         let mut arg_types = vec![];
         for arg in &self.args {
@@ -119,7 +119,7 @@ impl Call {
                 }
                 None => {
                     return Err(Box::new(crate::err::FunctionNotFoundError {
-                        name: self.variable.name,
+                        name: self.variable.name.to_string(),
                     }))
                 }
             },
@@ -128,7 +128,7 @@ impl Call {
         match signatures.get(self.variable.name) {
             Some(sig) => Ok(sig.return_type),
             None => Err(Box::new(crate::err::NoFunctionMatchesError {
-                name: self.variable.name,
+                name: self.variable.name.to_string(),
             })),
         }
     }

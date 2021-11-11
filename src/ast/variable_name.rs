@@ -3,12 +3,12 @@ use crate::parser::Rule;
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::variable))]
-pub struct VariableName {
+pub struct VariableName<'a> {
     #[pest_ast(outer(with(span_into_str), with(string_to_static_str)))]
-    pub name: &'static str,
+    pub name: &'a str,
 }
 
-impl std::fmt::Display for VariableName {
+impl std::fmt::Display for VariableName<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.name)
     }

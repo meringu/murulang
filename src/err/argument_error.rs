@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct ArgumentError {
-    pub function_name: &'static str,
+    pub function_name: String,
     pub expected: usize,
     pub actual: usize,
 }

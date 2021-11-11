@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct FunctionCaseUnreachableError {
-    pub function_name: &'static str,
+    pub function_name: String,
 }
 
 impl std::fmt::Display for FunctionCaseUnreachableError {

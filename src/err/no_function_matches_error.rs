@@ -1,12 +1,12 @@
 #[derive(Debug, Clone)]
-pub struct NoFunctionMatchesError<'a> {
-    pub name: &'a str,
+pub struct NoFunctionMatchesError {
+    pub name: String,
 }
 
-impl<'a> std::fmt::Display for NoFunctionMatchesError<'a> {
+impl std::fmt::Display for NoFunctionMatchesError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "no match for function error: {}", self.name)
     }
 }
 
-impl<'a> std::error::Error for NoFunctionMatchesError<'a> {}
+impl std::error::Error for NoFunctionMatchesError {}

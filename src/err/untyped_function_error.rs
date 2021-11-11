@@ -1,6 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct UntypedFunctionError {
-    pub function_name: &'static str,
+    pub function_name: String,
 }
 
 impl std::fmt::Display for UntypedFunctionError {

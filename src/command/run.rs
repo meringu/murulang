@@ -34,7 +34,7 @@ impl Run {
             true => &self.source,
             false => {
                 return Err(Box::new(err::StandardError {
-                    s: "source not a .muru file",
+                    s: "source not a .muru file".to_string(),
                 }));
             }
         };

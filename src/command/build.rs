@@ -37,7 +37,7 @@ impl Build {
             true => &self.source,
             false => {
                 return Err(Box::new(err::StandardError {
-                    s: "source not a .muru file",
+                    s: "source not a .muru file".to_string(),
                 }));
             }
         };
@@ -53,7 +53,7 @@ impl Build {
                 Some(s) => s,
                 None => {
                     return Err(Box::new(err::StandardError {
-                        s: "output not a .wasm file",
+                        s: "output not a .wasm file".to_string(),
                     }));
                 }
             }

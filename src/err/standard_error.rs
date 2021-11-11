@@ -1,12 +1,12 @@
 #[derive(Debug, Clone)]
-pub struct StandardError<'a> {
-    pub s: &'a str,
+pub struct StandardError {
+    pub s: String,
 }
 
-impl<'a> std::fmt::Display for StandardError<'a> {
+impl std::fmt::Display for StandardError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "error: {}", self.s)
     }
 }
 
-impl<'a> std::error::Error for StandardError<'a> {}
+impl std::error::Error for StandardError {}

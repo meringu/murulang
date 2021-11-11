@@ -6,8 +6,8 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::program))]
-pub struct Program {
-    pub lines: Vec<Line>,
+pub struct Program<'a> {
+    pub lines: Vec<Line<'a>>,
     _eoi: EOI,
 }
 
@@ -15,7 +15,7 @@ pub struct Program {
 #[pest_ast(rule(Rule::EOI))]
 struct EOI;
 
-impl Program {
+impl Program<'_> {
     pub fn to_wasm(
         &self,
         included_sigs: HashMap<&str, FunctionSignature>,
@@ -56,7 +56,9 @@ impl Program {
         let main = match functions.get("main") {
             Some(f) => &f[0],
             None => {
-                return Err(Box::new(err::FunctionNotFoundError { name: "main" }));
+                return Err(Box::new(err::FunctionNotFoundError {
+                    name: "main".to_string(),
+                }));
             }
         };
 
@@ -123,7 +125,7 @@ impl Program {
 
             if fns[fns.len() - 1].0.is_some() {
                 return Err(Box::new(err::StandardError {
-                    s: "murulang was unable to ensure the function matches all cases",
+                    s: "murulang was unable to ensure the function matches all cases".to_string(),
                 }));
             }
 

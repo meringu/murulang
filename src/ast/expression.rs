@@ -9,20 +9,20 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::unary))]
-pub enum Unary {
-    Expression(Expression),
+pub enum Unary<'a> {
+    Expression(Expression<'a>),
     Literal(Variable),
-    Call(Call),
+    Call(Call<'a>),
 }
 
-impl Unary {
+impl<'a> Unary<'a> {
     pub fn validate(
         &self,
-        current_function: &str,
-        globals: &HashMap<&str, Vec<&Function>>,
-        signatures: &mut HashMap<&str, FunctionSignature>,
-        validated: &mut HashSet<&str>,
-        local_types: &HashMap<&str, VariableType>,
+        current_function: &'a str,
+        globals: &HashMap<&'a str, Vec<&Function<'a>>>,
+        signatures: &mut HashMap<&'a str, FunctionSignature>,
+        validated: &mut HashSet<&'a str>,
+        local_types: &HashMap<&'a str, VariableType>,
     ) -> Result<VariableType, Box<dyn std::error::Error>> {
         match self {
             Unary::Expression(e) => e.validate(
@@ -58,20 +58,20 @@ impl Unary {
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::binary))]
-pub struct Binary {
-    pub left: Unary,
+pub struct Binary<'a> {
+    pub left: Unary<'a>,
     pub operator: Operator,
-    pub right: Unary,
+    pub right: Unary<'a>,
 }
 
-impl Binary {
+impl<'a> Binary<'a> {
     pub fn validate(
         &self,
-        current_function: &str,
-        globals: &HashMap<&str, Vec<&Function>>,
-        signatures: &mut HashMap<&str, FunctionSignature>,
-        validated: &mut HashSet<&str>,
-        local_types: &HashMap<&str, VariableType>,
+        current_function: &'a str,
+        globals: &HashMap<&'a str, Vec<&Function<'a>>>,
+        signatures: &mut HashMap<&'a str, FunctionSignature>,
+        validated: &mut HashSet<&'a str>,
+        local_types: &HashMap<&'a str, VariableType>,
     ) -> Result<VariableType, Box<dyn std::error::Error>> {
         let left_type = self.left.validate(
             current_function,
@@ -125,20 +125,20 @@ impl Binary {
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::ternary))]
-pub struct Ternary {
-    pub condition: Unary,
-    pub truthy: Unary,
-    pub falsy: Unary,
+pub struct Ternary<'a> {
+    pub condition: Unary<'a>,
+    pub truthy: Unary<'a>,
+    pub falsy: Unary<'a>,
 }
 
-impl Ternary {
+impl<'a> Ternary<'a> {
     pub fn validate(
         &self,
-        current_function: &str,
-        globals: &HashMap<&str, Vec<&Function>>,
-        signatures: &mut HashMap<&str, FunctionSignature>,
-        validated: &mut HashSet<&str>,
-        local_types: &HashMap<&str, VariableType>,
+        current_function: &'a str,
+        globals: &HashMap<&'a str, Vec<&Function<'a>>>,
+        signatures: &mut HashMap<&'a str, FunctionSignature>,
+        validated: &mut HashSet<&'a str>,
+        local_types: &HashMap<&'a str, VariableType>,
     ) -> Result<VariableType, Box<dyn std::error::Error>> {
         let return_type = self.condition.validate(
             current_function,
@@ -196,20 +196,20 @@ impl Ternary {
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::expression))]
-pub enum Expression {
-    Unary(Box<Unary>),
-    Binary(Box<Binary>),
-    Ternary(Box<Ternary>),
+pub enum Expression<'a> {
+    Unary(Box<Unary<'a>>),
+    Binary(Box<Binary<'a>>),
+    Ternary(Box<Ternary<'a>>),
 }
 
-impl Expression {
+impl<'a> Expression<'a> {
     pub fn validate(
         &self,
-        current_function: &str,
-        globals: &HashMap<&str, Vec<&Function>>,
-        signatures: &mut HashMap<&str, FunctionSignature>,
-        validated: &mut HashSet<&str>,
-        local_types: &HashMap<&str, VariableType>,
+        current_function: &'a str,
+        globals: &HashMap<&'a str, Vec<&Function<'a>>>,
+        signatures: &mut HashMap<&'a str, FunctionSignature>,
+        validated: &mut HashSet<&'a str>,
+        local_types: &HashMap<&'a str, VariableType>,
     ) -> Result<VariableType, Box<dyn std::error::Error>> {
         match self {
             Expression::Unary(u) => u.validate(

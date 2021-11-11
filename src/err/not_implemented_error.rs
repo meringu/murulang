@@ -1,12 +1,12 @@
 #[derive(Debug, Clone)]
-pub struct NotImplementedError<'a> {
-    pub sub: &'a str,
+pub struct NotImplementedError {
+    pub sub: String,
 }
 
-impl<'a> std::fmt::Display for NotImplementedError<'a> {
+impl std::fmt::Display for NotImplementedError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "not implemented error: {}", self.sub)
     }
 }
 
-impl<'a> std::error::Error for NotImplementedError<'a> {}
+impl std::error::Error for NotImplementedError {}

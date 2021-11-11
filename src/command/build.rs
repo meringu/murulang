@@ -77,7 +77,7 @@ impl Build {
             println!("ast:\n{:#?}", program);
         }
 
-        let wasm = program.to_wasm(stdlib::signatures(), stdlib::funcs())?;
+        let wasm = program.to_wasm(stdlib::Lib::new())?;
 
         if log::Level::Debug <= level_filter {
             println!("wast:\n{}", wasm.to_pretty(4));

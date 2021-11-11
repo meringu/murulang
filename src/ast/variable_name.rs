@@ -1,10 +1,10 @@
-use crate::ast::util::{span_into_str, string_to_static_str};
+use crate::ast::util::span_into_str;
 use crate::parser::Rule;
 
 #[derive(Debug, FromPest, Copy, Clone)]
 #[pest_ast(rule(Rule::variable))]
 pub struct VariableName<'a> {
-    #[pest_ast(outer(with(span_into_str), with(string_to_static_str)))]
+    #[pest_ast(outer(with(span_into_str)))]
     pub name: &'a str,
 }
 

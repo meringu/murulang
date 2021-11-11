@@ -1,6 +1,7 @@
 use crate::ast::{Function, FunctionSignature, Line};
 use crate::err;
 use crate::parser::Rule;
+use crate::stdlib::Lib;
 use crate::{wasm, wasm::Expression, wasm_dollar, wasm_quote};
 use std::collections::{HashMap, HashSet};
 
@@ -15,19 +16,44 @@ pub struct Program<'a> {
 #[pest_ast(rule(Rule::EOI))]
 struct EOI;
 
-impl Program<'_> {
-    pub fn to_wasm(
-        &self,
-        included_sigs: HashMap<&str, FunctionSignature>,
-        included_fns: Vec<Expression>,
-    ) -> Result<wasm::Expression, Box<dyn std::error::Error>> {
+impl<'a> Program<'a> {
+    pub fn to_wasm(&self, lib: Lib<'a>) -> Result<Expression, Box<dyn std::error::Error>> {
         let mut functions = HashMap::<&str, Vec<&Function>>::new();
         let mut function_signatures = HashMap::<&str, FunctionSignature>::new();
         let mut validated = HashSet::<&str>::new();
 
-        for (name, sig) in included_sigs {
-            function_signatures.insert(name, sig);
+        let mut module = wasm!(
+            "module",
+            wasm!(
+                "import",
+                wasm_quote!("wasi_unstable"),
+                wasm_quote!("fd_write"),
+                wasm!(
+                    "func",
+                    wasm_dollar!("fd_write"),
+                    wasm!("param", "i32", "i32", "i32", "i32"),
+                    wasm!("result", "i32")
+                )
+            ),
+            wasm!("export", wasm_quote!("memory"), wasm!("memory", 0)),
+            wasm!("memory", 1),
+            wasm!(
+                "func",
+                wasm_dollar!("_start"),
+                wasm!("export", wasm_quote!("_start")),
+                wasm!(
+                    "call",
+                    wasm_dollar!("printi"),
+                    wasm!("call", wasm_dollar!("main"))
+                ),
+                wasm!("call", wasm_dollar!("printc"), wasm!("i32.const", 10))
+            )
+        );
+
+        for (name, func) in lib.funcs {
+            function_signatures.insert(name, func.sig);
             functions.insert(name, vec![]);
+            module = module.extend(func.wasm);
         }
 
         for l in self.lines.iter() {
@@ -76,38 +102,6 @@ impl Program<'_> {
             }
         }
 
-        let mut module_inner = wasm!(
-            "module",
-            wasm!(
-                "import",
-                wasm_quote!("wasi_unstable"),
-                wasm_quote!("fd_write"),
-                wasm!(
-                    "func",
-                    wasm_dollar!("fd_write"),
-                    wasm!("param", "i32", "i32", "i32", "i32"),
-                    wasm!("result", "i32")
-                )
-            ),
-            wasm!("export", wasm_quote!("memory"), wasm!("memory", 0)),
-            wasm!("memory", 1),
-            wasm!(
-                "func",
-                wasm_dollar!("_start"),
-                wasm!("export", wasm_quote!("_start")),
-                wasm!(
-                    "call",
-                    wasm_dollar!("printi"),
-                    wasm!("call", wasm_dollar!("main"))
-                ),
-                wasm!("call", wasm_dollar!("printc"), wasm!("i32.const", 10))
-            )
-        );
-
-        for included_fn in included_fns {
-            module_inner = module_inner.extend(included_fn);
-        }
-
         for (fname, sig) in &function_signatures {
             let mut fns = vec![];
             for f in functions.get_mut(fname).unwrap() {
@@ -154,10 +148,10 @@ impl Program<'_> {
                 .extend(wasm!("result", sig.return_type.to_wasm()))
                 .extend(inner);
 
-            module_inner = module_inner.extend(func);
+            module = module.extend(func);
         }
 
-        Ok(module_inner)
+        Ok(module)
     }
 }
 
@@ -170,6 +164,7 @@ mod tests {
     use gag::BufferRedirect;
     use pest::Parser;
     use std::io::Read;
+    use stdlib::Lib;
     use wasmtime::{Engine, Linker, Module, Store};
     use wasmtime_wasi::sync::WasiCtxBuilder;
 
@@ -178,9 +173,7 @@ mod tests {
         let source_content = include_str!("../../examples/example.muru");
         let mut parse_tree = parser::Parser::parse(parser::Rule::program, &source_content).unwrap();
         let program = Program::from_pest(&mut parse_tree).unwrap();
-        let wasm = program
-            .to_wasm(stdlib::signatures(), stdlib::funcs())
-            .unwrap();
+        let wasm = program.to_wasm(Lib::new()).unwrap();
         let bin = wasm.to_bin().unwrap();
 
         let engine = Engine::default();

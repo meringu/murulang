@@ -5,10 +5,20 @@ use crate::ast::FunctionSignature;
 use crate::wasm::Expression;
 use std::collections::HashMap;
 
-pub fn signatures() -> HashMap<&'static str, FunctionSignature> {
-    HashMap::<&'static str, FunctionSignature>::from([printc::signature(), printi::signature()])
+pub struct Func {
+    pub sig: FunctionSignature,
+    pub wasm: Expression,
 }
 
-pub fn funcs() -> Vec<Expression> {
-    vec![printc::func(), printi::func()]
+pub struct Lib<'a> {
+    pub funcs: HashMap<&'a str, Func>,
+}
+
+impl<'a> Lib<'a> {
+    pub fn new() -> Self {
+        let mut funcs = HashMap::new();
+        funcs.insert("printi", printi::new());
+        funcs.insert("printc", printc::new());
+        Self { funcs: funcs }
+    }
 }

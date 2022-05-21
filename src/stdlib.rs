@@ -1,24 +1,22 @@
 mod printc;
 mod printi;
 
-use crate::ast::FunctionSignature;
 use crate::wasm::Expression;
-use std::collections::HashMap;
 
 pub struct Func {
-    pub sig: FunctionSignature,
     pub wasm: Expression,
 }
 
-pub struct Lib<'a> {
-    pub funcs: HashMap<&'a str, Func>,
+impl Func {
+    fn new(wasm: Expression) -> Self {
+        Self { wasm: wasm }
+    }
+
+    pub fn to_wasm(self) -> Expression {
+        self.wasm
+    }
 }
 
-impl<'a> Lib<'a> {
-    pub fn new() -> Self {
-        let mut funcs = HashMap::new();
-        funcs.insert("printi", printi::new());
-        funcs.insert("printc", printc::new());
-        Self { funcs: funcs }
-    }
+pub fn funcs() -> Vec<Func> {
+    vec![printi::new(), printc::new()]
 }

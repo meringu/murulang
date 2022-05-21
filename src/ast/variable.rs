@@ -60,14 +60,6 @@ pub enum Variable {
 }
 
 impl Variable {
-    pub fn get_type(&self) -> VariableType {
-        match self {
-            Variable::Bool(_) => VariableType::Bool,
-            Variable::Float(_) => VariableType::Float,
-            Variable::Int(_) => VariableType::Int,
-        }
-    }
-
     pub fn to_wasm(&self) -> Expression {
         match self {
             Variable::Int(l) => wasm!("i32.const", l.val),

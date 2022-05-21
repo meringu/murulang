@@ -57,7 +57,7 @@ impl Run {
             println!("ast:\n{:#?}", program);
         }
 
-        let wasm = program.to_wasm(stdlib::Lib::new())?;
+        let wasm = program.to_wasm(stdlib::funcs())?;
 
         if log::Level::Debug <= level_filter {
             println!("wast:\n{}", wasm.to_pretty(4));

@@ -7,7 +7,7 @@ mod util;
 mod variable;
 mod variable_name;
 
-pub use crate::ast::function::{Function, FunctionParameter, FunctionSignature, Line};
+pub use crate::ast::function::{Function, FunctionParameter};
 pub use crate::ast::operator::Operator;
 pub use crate::ast::program::Program;
 pub use crate::ast::variable::{Variable, VariableType};

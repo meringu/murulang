@@ -1,14 +1,12 @@
-use crate::ast::{Function, FunctionSignature, Line};
-use crate::err;
+use crate::ast::Function;
 use crate::parser::Rule;
-use crate::stdlib::Lib;
+use crate::stdlib;
 use crate::{wasm, wasm::Expression, wasm_dollar, wasm_quote};
-use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, FromPest)]
 #[pest_ast(rule(Rule::program))]
 pub struct Program<'a> {
-    pub lines: Vec<Line<'a>>,
+    pub functions: Vec<Function<'a>>,
     _eoi: EOI,
 }
 
@@ -17,11 +15,10 @@ pub struct Program<'a> {
 struct EOI;
 
 impl<'a> Program<'a> {
-    pub fn to_wasm(&self, lib: Lib<'a>) -> Result<Expression, Box<dyn std::error::Error>> {
-        let mut functions = HashMap::<&str, Vec<&Function>>::new();
-        let mut function_signatures = HashMap::<&str, FunctionSignature>::new();
-        let mut validated = HashSet::<&str>::new();
-
+    pub fn to_wasm(
+        &self,
+        lib: Vec<stdlib::Func>,
+    ) -> Result<Expression, Box<dyn std::error::Error>> {
         let mut module = wasm!(
             "module",
             wasm!(
@@ -50,105 +47,12 @@ impl<'a> Program<'a> {
             )
         );
 
-        for (name, func) in lib.funcs {
-            function_signatures.insert(name, func.sig);
-            functions.insert(name, vec![]);
-            module = module.extend(func.wasm);
+        for func in self.functions.iter() {
+            module = module.extend(func.to_wasm());
         }
 
-        for l in self.lines.iter() {
-            match l {
-                Line::Function(f) => match functions.get_mut(f.name.name) {
-                    Some(fns) => fns.push(f),
-                    None => {
-                        functions.insert(f.name.name, vec![f]);
-                    }
-                },
-                Line::FunctionSignature(s) => {
-                    function_signatures.insert(
-                        s.name.name,
-                        FunctionSignature {
-                            arg_types: s.types[0..s.types.len() - 1]
-                                .iter()
-                                .map(|x| x.var_type)
-                                .collect(),
-                            return_type: s.types.last().unwrap().var_type,
-                        },
-                    );
-                }
-            }
-        }
-
-        let main = match functions.get("main") {
-            Some(f) => &f[0],
-            None => {
-                return Err(Box::new(err::FunctionNotFoundError {
-                    name: "main".to_string(),
-                }));
-            }
-        };
-
-        main.validate(
-            "",
-            &functions,
-            &mut function_signatures,
-            &mut validated,
-            &vec![],
-        )?;
-        for (fname, _) in &functions {
-            match function_signatures.get(fname) {
-                None => eprintln!("Warning: unused function {}", fname),
-                _ => {}
-            }
-        }
-
-        for (fname, sig) in &function_signatures {
-            let mut fns = vec![];
-            for f in functions.get_mut(fname).unwrap() {
-                let cond = f.wat_matches_condition();
-                if cond.is_none() {
-                    fns.push((cond, f));
-                    break;
-                }
-                fns.push((cond, f));
-            }
-
-            if fns.len() == 0 {
-                continue;
-            }
-
-            if fns[fns.len() - 1].0.is_some() {
-                return Err(Box::new(err::StandardError {
-                    s: "murulang was unable to ensure the function matches all cases".to_string(),
-                }));
-            }
-
-            let mut inner = fns.pop().unwrap().1.to_wasm(sig.return_type);
-            while let Some((cond, f)) = fns.pop() {
-                inner = wasm!(
-                    "if",
-                    wasm!("result", sig.return_type.to_wasm()),
-                    cond.unwrap(),
-                    wasm!("then", f.to_wasm(sig.return_type)),
-                    wasm!("else", inner)
-                );
-            }
-
-            let mut func = wasm!(wasm!("func"), wasm_dollar!(fname));
-
-            if sig.arg_types.len() > 0 {
-                let mut param = wasm!("param");
-                for ty in sig.arg_types.iter() {
-                    param = param.extend(ty.to_wasm());
-                }
-                func = func.extend(param);
-            }
-
-            func = func
-                .extend(wasm!("result", sig.return_type.to_wasm()))
-                .extend(inner);
-
-            module = module.extend(func);
+        for func in lib {
+            module = module.extend(func.to_wasm())
         }
 
         Ok(module)
@@ -164,16 +68,19 @@ mod tests {
     use gag::BufferRedirect;
     use pest::Parser;
     use std::io::Read;
-    use stdlib::Lib;
     use wasmtime::{Engine, Linker, Module, Store};
     use wasmtime_wasi::sync::WasiCtxBuilder;
 
     #[test]
     fn test_example() {
-        let source_content = include_str!("../../examples/example.muru");
+        let source_content = include_str!("../../examples/example.muru")
+            .lines()
+            .filter(|x| !x.starts_with("#"))
+            .collect::<Vec<&str>>()
+            .join("\n");
         let mut parse_tree = parser::Parser::parse(parser::Rule::program, &source_content).unwrap();
         let program = Program::from_pest(&mut parse_tree).unwrap();
-        let wasm = program.to_wasm(Lib::new()).unwrap();
+        let wasm = program.to_wasm(stdlib::funcs()).unwrap();
         let bin = wasm.to_bin().unwrap();
 
         let engine = Engine::default();

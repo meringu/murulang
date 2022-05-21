@@ -2,6 +2,11 @@ int = @{ ("-")? ~ ASCII_DIGIT+ }
 float = @{ int ~ "." ~ ASCII_DIGIT+ }
 bool = { "true" | "false" }
 
+int_type = { "int" }
+float_type = { "float" }
+bool_type = { "bool" }
+var_type = { int_type | float_type | bool_type }
+
 literal = { int | float | bool }
 
 variable = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
@@ -14,28 +19,19 @@ operator = { add | subtract | multiply | divide | eq | neq }
     eq       = { "==" }
     neq      = { "!=" }
 
-argument = { "(" ~ expression ~ ")" | literal | variable }
+argument = { expression | literal | variable }
 
-call = { variable ~ (argument)* }
+call = { variable ~ "(" ~ (argument ~ ",")* ~ ")" }
 
 unary = { "(" ~ expression ~ ")" | literal | call }
 binary = { unary ~ operator ~ unary }
 ternary = { unary ~ "?" ~ unary ~ ":" ~ unary }
 expression = { ternary | binary | unary }
 
-assign = _{ "=" }
-parameter = { literal | variable }
-function = { variable ~ (parameter)* ~ assign ~ expression }
+parameter = { variable ~ ":" ~ var_type }
+parameters = { "(" ~ (parameter ~ "," )+ ~ ")"}
+function = { variable ~ parameters? ~ "->" ~ var_type ~ "{" ~ expression ~ "}" }
 
-int_type = { "int" }
-float_type = { "float" }
-bool_type = { "bool" }
-var_type = { int_type | float_type | bool_type }
-function_signature = { variable ~ "::" ~ (var_type ~ ("->" ~ var_type)*)? }
+program = { SOI ~ (function)* ~ EOI }
 
-line_break = _{ "\n" }
-comment = _{ "#" ~ (!"\n" ~ ANY)* }
-line = { function_signature | function }
-program = { SOI ~ (comment | line | line_break)* ~ EOI }
-
-WHITESPACE = _{ " " | "\r" | "\t" }
+WHITESPACE = _{ " " | "\n" | "\t" }

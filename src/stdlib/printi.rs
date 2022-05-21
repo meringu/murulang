@@ -1,50 +1,43 @@
 use super::Func;
-use crate::ast::{FunctionSignature, VariableType};
 use crate::{wasm, wasm_dollar};
 
 pub fn new() -> Func {
-    Func {
-        sig: FunctionSignature {
-            arg_types: vec![],
-            return_type: VariableType::Int,
-        },
-        wasm: wasm!(
-            "func",
-            wasm_dollar!("printi"),
-            wasm!("param", wasm_dollar!("num"), "i32"),
+    Func::new(wasm!(
+        "func",
+        wasm_dollar!("printi"),
+        wasm!("param", wasm_dollar!("num"), "i32"),
+        wasm!(
+            "if",
             wasm!(
-                "if",
+                "i32.ne",
+                wasm!("i32.const", 0),
+                wasm!("local.get", wasm_dollar!("num"))
+            ),
+            wasm!(
+                "then",
                 wasm!(
-                    "i32.ne",
-                    wasm!("i32.const", 0),
-                    wasm!("local.get", wasm_dollar!("num"))
+                    "call",
+                    wasm_dollar!("printi"),
+                    wasm!(
+                        "i32.div_u",
+                        wasm!("local.get", wasm_dollar!("num")),
+                        wasm!("i32.const", 10)
+                    )
                 ),
                 wasm!(
-                    "then",
+                    "call",
+                    wasm_dollar!("printc"),
                     wasm!(
-                        "call",
-                        wasm_dollar!("printi"),
+                        "i32.add",
+                        wasm!("i32.const", 48),
                         wasm!(
-                            "i32.div_u",
+                            "i32.rem_u",
                             wasm!("local.get", wasm_dollar!("num")),
                             wasm!("i32.const", 10)
-                        )
-                    ),
-                    wasm!(
-                        "call",
-                        wasm_dollar!("printc"),
-                        wasm!(
-                            "i32.add",
-                            wasm!("i32.const", 48),
-                            wasm!(
-                                "i32.rem_u",
-                                wasm!("local.get", wasm_dollar!("num")),
-                                wasm!("i32.const", 10)
-                            )
                         )
                     )
                 )
             )
-        ),
-    }
+        )
+    ))
 }
